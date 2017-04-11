@@ -4,6 +4,7 @@ depend
 ispc
 ispc_test
 ispc_ref
+llvm/
 objs
 docs/doxygen
 docs/*.html
