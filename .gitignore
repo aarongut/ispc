@@ -10,6 +10,9 @@ docs/doxygen
 docs/*.html
 tests*/*cpp
 tests*/*run
+tests*/*.o
+tests_ispcpp/*.h
+tests_ispcpp/*pre*
 logs/
 notify_log.log
 alloy_results_*
