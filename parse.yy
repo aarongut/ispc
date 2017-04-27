@@ -118,21 +118,20 @@ static void lFinalizeEnumeratorSymbols(std::vector<Symbol *> &enums,
                                        const EnumType *enumType);
 
 static const char *lBuiltinTokens[] = {
-    "assert", "bool", "break", "case", "cdo",
-    "cfor", "cif", "cwhile", "const", "continue", "default",
-    "do", "delete", "double", "else", "enum", "export", "extern", "false",
-    "float", "for", "foreach", "foreach_active", "foreach_tiled",
-     "foreach_unique", "goto", "if", "in", "inline",
-    "int", "int8", "int16", "int32", "int64", "launch", "new", "NULL",
-    "print", "return", "signed", "sizeof", "static", "struct", "switch",
-    "sync", "task", "true", "typedef", "uniform", "unmasked", "unsigned",
-    "varying", "void", "while", NULL
+    "assert", "bool", "break", "case", "cdo", "cfor", "cif", "cwhile", "const",
+    "continue", "default", "do", "delete", "double", "else", "enum", "export",
+    "extern", "false", "float", "floating", "for", "foreach", "foreach_active",
+    "foreach_tiled", "foreach_unique", "goto", "if", "in", "inline", "int",
+    "int8", "int16", "int32", "int64", "integer", "launch", "new", "NULL",
+    "number", "print", "return", "signed", "sizeof", "static", "struct",
+    "switch", "sync", "task", "true", "typedef", "uniform", "unmasked",
+    "unsigned", "varying", "void", "while", NULL
 };
 
 static const char *lParamListTokens[] = {
-    "bool", "const", "double", "enum", "false", "float", "int",
-    "int8", "int16", "int32", "int64", "signed", "struct", "true",
-    "uniform", "unsigned", "varying", "void", NULL
+    "bool", "const", "double", "enum", "false", "float", "floating", "int",
+    "int8", "int16", "int32", "int64", "integer", "number", "signed", "struct",
+    "true", "uniform", "unsigned", "varying", "void", NULL
 };
 
 struct ForeachDimension {
@@ -159,6 +158,7 @@ struct ForeachDimension {
     const Type *type;
     std::vector<std::pair<const Type *, SourcePos> > *typeList;
     const AtomicType *atomicType;
+    const PolyType *polyType;
     int typeQualifier;
     StorageClass storageClass;
     Stmt *stmt;
@@ -198,6 +198,7 @@ struct ForeachDimension {
 %token TOKEN_EXTERN TOKEN_EXPORT TOKEN_STATIC TOKEN_INLINE TOKEN_TASK TOKEN_DECLSPEC
 %token TOKEN_UNIFORM TOKEN_VARYING TOKEN_TYPEDEF TOKEN_SOA TOKEN_UNMASKED
 %token TOKEN_CHAR TOKEN_INT TOKEN_SIGNED TOKEN_UNSIGNED TOKEN_FLOAT TOKEN_DOUBLE
+%token TOKEN_INTEGER TOKEN_FLOATING TOKEN_NUMBER
 %token TOKEN_INT8 TOKEN_INT16 TOKEN_INT64 TOKEN_CONST TOKEN_VOID TOKEN_BOOL
 %token TOKEN_ENUM TOKEN_STRUCT TOKEN_TRUE TOKEN_FALSE
 
@@ -244,6 +245,7 @@ struct ForeachDimension {
 %type <type> short_vec_specifier
 %type <typeList> type_specifier_list
 %type <atomicType> atomic_var_type_specifier
+%type <polyType> poly_type_specifier poly_quant_type_specifier
 
 %type <typeQualifier> type_qualifier type_qualifier_list
 %type <storageClass> storage_class_specifier
@@ -364,60 +366,60 @@ launch_expression
        }
 
     | TOKEN_LAUNCH '[' assignment_expression ']' postfix_expression '(' argument_expression_list ')'
-      { 
+      {
           ConstExpr *oneExpr = new ConstExpr(AtomicType::UniformInt32, (int32_t)1, @5);
           Expr *launchCount[3] = {$3, oneExpr, oneExpr};
           $$ = new FunctionCallExpr($5, $7, Union(@5,@8), true, launchCount);
       }
     | TOKEN_LAUNCH '[' assignment_expression ']' postfix_expression '(' ')'
-      { 
+      {
           ConstExpr *oneExpr = new ConstExpr(AtomicType::UniformInt32, (int32_t)1, @5);
           Expr *launchCount[3] = {$3, oneExpr, oneExpr};
           $$ = new FunctionCallExpr($5, new ExprList(Union(@5,@6)), Union(@5,@7), true, launchCount);
       }
 
     | TOKEN_LAUNCH '[' assignment_expression ',' assignment_expression ']' postfix_expression '(' argument_expression_list ')'
-      { 
+      {
           ConstExpr *oneExpr = new ConstExpr(AtomicType::UniformInt32, (int32_t)1, @7);
           Expr *launchCount[3] = {$3, $5, oneExpr};
           $$ = new FunctionCallExpr($7, $9, Union(@7,@10), true, launchCount);
       }
     | TOKEN_LAUNCH '[' assignment_expression ',' assignment_expression ']' postfix_expression '(' ')'
-      { 
+      {
           ConstExpr *oneExpr = new ConstExpr(AtomicType::UniformInt32, (int32_t)1, @7);
           Expr *launchCount[3] = {$3, $5, oneExpr};
           $$ = new FunctionCallExpr($7, new ExprList(Union(@7,@8)), Union(@7,@9), true, launchCount);
       }
     | TOKEN_LAUNCH '[' assignment_expression ']' '[' assignment_expression ']' postfix_expression '(' argument_expression_list ')'
-      { 
+      {
           ConstExpr *oneExpr = new ConstExpr(AtomicType::UniformInt32, (int32_t)1, @8);
           Expr *launchCount[3] = {$6, $3, oneExpr};
           $$ = new FunctionCallExpr($8, $10, Union(@8,@11), true, launchCount);
       }
     | TOKEN_LAUNCH '[' assignment_expression ']' '[' assignment_expression ']' postfix_expression '(' ')'
-      { 
+      {
           ConstExpr *oneExpr = new ConstExpr(AtomicType::UniformInt32, (int32_t)1, @8);
           Expr *launchCount[3] = {$6, $3, oneExpr};
           $$ = new FunctionCallExpr($8, new ExprList(Union(@8,@9)), Union(@8,@10), true, launchCount);
       }
 
     | TOKEN_LAUNCH '[' assignment_expression ',' assignment_expression ',' assignment_expression ']' postfix_expression '(' argument_expression_list ')'
-      { 
+      {
           Expr *launchCount[3] = {$3, $5, $7};
           $$ = new FunctionCallExpr($9, $11, Union(@9,@12), true, launchCount);
       }
     | TOKEN_LAUNCH '[' assignment_expression ',' assignment_expression ',' assignment_expression ']' postfix_expression '(' ')'
-      { 
+      {
           Expr *launchCount[3] = {$3, $5, $7};
           $$ = new FunctionCallExpr($9, new ExprList(Union(@9,@10)), Union(@9,@11), true, launchCount);
       }
     | TOKEN_LAUNCH '[' assignment_expression ']' '[' assignment_expression ']' '[' assignment_expression ']' postfix_expression '(' argument_expression_list ')'
-      { 
+      {
           Expr *launchCount[3] = {$9, $6, $3};
           $$ = new FunctionCallExpr($11, $13, Union(@11,@14), true, launchCount);
       }
     | TOKEN_LAUNCH '[' assignment_expression ']' '[' assignment_expression ']' '[' assignment_expression ']' postfix_expression '(' ')'
-      { 
+      {
           Expr *launchCount[3] = {$9, $6, $3};
           $$ = new FunctionCallExpr($11, new ExprList(Union(@11,@12)), Union(@11,@13), true, launchCount);
       }
@@ -908,6 +910,7 @@ storage_class_specifier
 
 type_specifier
     : atomic_var_type_specifier { $$ = $1; }
+    | poly_quant_type_specifier { $$ = $1; }
     | TOKEN_TYPE_NAME
     {
         const Type *t = m->symbolTable->LookupType(yytext);
@@ -948,6 +951,20 @@ atomic_var_type_specifier
     | TOKEN_FLOAT { $$ = AtomicType::UniformFloat->GetAsUnboundVariabilityType(); }
     | TOKEN_DOUBLE { $$ = AtomicType::UniformDouble->GetAsUnboundVariabilityType(); }
     | TOKEN_INT64 { $$ = AtomicType::UniformInt64->GetAsUnboundVariabilityType(); }
+    ;
+
+poly_type_specifier
+    : TOKEN_FLOATING { $$ = PolyType::UniformFloating->GetAsUnboundVariabilityType(); }
+    | TOKEN_INTEGER { $$ = PolyType::UniformInteger->GetAsUnboundVariabilityType(); }
+    | TOKEN_NUMBER { $$ = PolyType::UniformNumber->GetAsUnboundVariabilityType(); }
+    ;
+
+poly_quant_type_specifier
+    : poly_type_specifier '$' int_constant
+    {
+        $$ = $1->Quantify($3);
+    }
+    | poly_type_specifier { $$ = $1; }
     ;
 
 short_vec_specifier
@@ -2272,10 +2289,10 @@ static void lAddThreadIndexCountToSymbolTable(SourcePos pos) {
 
     Symbol *taskIndexSym = new Symbol("taskIndex", pos, type);
     m->symbolTable->AddVariable(taskIndexSym);
-    
+
     Symbol *taskCountSym = new Symbol("taskCount", pos, type);
     m->symbolTable->AddVariable(taskCountSym);
-    
+
     Symbol *taskIndexSym0 = new Symbol("taskIndex0", pos, type);
     m->symbolTable->AddVariable(taskIndexSym0);
     Symbol *taskIndexSym1 = new Symbol("taskIndex1", pos, type);
@@ -2283,7 +2300,7 @@ static void lAddThreadIndexCountToSymbolTable(SourcePos pos) {
     Symbol *taskIndexSym2 = new Symbol("taskIndex2", pos, type);
     m->symbolTable->AddVariable(taskIndexSym2);
 
-    
+
     Symbol *taskCountSym0 = new Symbol("taskCount0", pos, type);
     m->symbolTable->AddVariable(taskCountSym0);
     Symbol *taskCountSym1 = new Symbol("taskCount1", pos, type);

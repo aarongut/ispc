@@ -63,31 +63,28 @@ inline int isatty(int) { return 0; }
 #endif // ISPC_IS_WINDOWS
 
 static int allTokens[] = {
-  TOKEN_ASSERT, TOKEN_BOOL, TOKEN_BREAK, TOKEN_CASE,
-  TOKEN_CDO, TOKEN_CFOR, TOKEN_CIF, TOKEN_CWHILE,
-  TOKEN_CONST, TOKEN_CONTINUE, TOKEN_DEFAULT, TOKEN_DO,
-  TOKEN_DELETE, TOKEN_DOUBLE, TOKEN_ELSE, TOKEN_ENUM,
-  TOKEN_EXPORT, TOKEN_EXTERN, TOKEN_FALSE, TOKEN_FLOAT, TOKEN_FOR,
+  TOKEN_ASSERT, TOKEN_BOOL, TOKEN_BREAK, TOKEN_CASE, TOKEN_CDO, TOKEN_CFOR,
+  TOKEN_CIF, TOKEN_CWHILE, TOKEN_CONST, TOKEN_CONTINUE, TOKEN_DEFAULT, TOKEN_DO,
+  TOKEN_DELETE, TOKEN_DOUBLE, TOKEN_ELSE, TOKEN_ENUM, TOKEN_EXPORT,
+  TOKEN_EXTERN, TOKEN_FALSE, TOKEN_FLOAT, TOKEN_FLOATING, TOKEN_FOR,
   TOKEN_FOREACH, TOKEN_FOREACH_ACTIVE, TOKEN_FOREACH_TILED,
-  TOKEN_FOREACH_UNIQUE, TOKEN_GOTO, TOKEN_IF, TOKEN_IN, TOKEN_INLINE,
-  TOKEN_INT, TOKEN_INT8, TOKEN_INT16, TOKEN_INT, TOKEN_INT64, TOKEN_LAUNCH,
-  TOKEN_NEW, TOKEN_NULL, TOKEN_PRINT, TOKEN_RETURN, TOKEN_SOA, TOKEN_SIGNED,
-  TOKEN_SIZEOF, TOKEN_STATIC, TOKEN_STRUCT, TOKEN_SWITCH, TOKEN_SYNC,
-  TOKEN_TASK, TOKEN_TRUE, TOKEN_TYPEDEF, TOKEN_UNIFORM, TOKEN_UNMASKED,
-  TOKEN_UNSIGNED, TOKEN_VARYING, TOKEN_VOID, TOKEN_WHILE,
-  TOKEN_STRING_C_LITERAL, TOKEN_DOTDOTDOT,
-  TOKEN_FLOAT_CONSTANT, TOKEN_DOUBLE_CONSTANT,
-  TOKEN_INT8_CONSTANT, TOKEN_UINT8_CONSTANT,
-  TOKEN_INT16_CONSTANT, TOKEN_UINT16_CONSTANT,
-  TOKEN_INT32_CONSTANT, TOKEN_UINT32_CONSTANT,
-  TOKEN_INT64_CONSTANT, TOKEN_UINT64_CONSTANT,
+  TOKEN_FOREACH_UNIQUE, TOKEN_GOTO, TOKEN_IF, TOKEN_IN, TOKEN_INLINE, TOKEN_INT,
+  TOKEN_INT8, TOKEN_INT16, TOKEN_INT, TOKEN_INT64, TOKEN_INTEGER, TOKEN_LAUNCH,
+  TOKEN_NEW, TOKEN_NULL, TOKEN_NUMBER, TOKEN_PRINT, TOKEN_RETURN, TOKEN_SOA,
+  TOKEN_SIGNED, TOKEN_SIZEOF, TOKEN_STATIC, TOKEN_STRUCT, TOKEN_SWITCH,
+  TOKEN_SYNC, TOKEN_TASK, TOKEN_TRUE, TOKEN_TYPEDEF, TOKEN_UNIFORM,
+  TOKEN_UNMASKED, TOKEN_UNSIGNED, TOKEN_VARYING, TOKEN_VOID, TOKEN_WHILE,
+  TOKEN_STRING_C_LITERAL, TOKEN_DOTDOTDOT, TOKEN_FLOAT_CONSTANT,
+  TOKEN_DOUBLE_CONSTANT, TOKEN_INT8_CONSTANT, TOKEN_UINT8_CONSTANT,
+  TOKEN_INT16_CONSTANT, TOKEN_UINT16_CONSTANT, TOKEN_INT32_CONSTANT,
+  TOKEN_UINT32_CONSTANT, TOKEN_INT64_CONSTANT, TOKEN_UINT64_CONSTANT,
   TOKEN_INC_OP, TOKEN_DEC_OP, TOKEN_LEFT_OP, TOKEN_RIGHT_OP, TOKEN_LE_OP,
   TOKEN_GE_OP, TOKEN_EQ_OP, TOKEN_NE_OP, TOKEN_AND_OP, TOKEN_OR_OP,
   TOKEN_MUL_ASSIGN, TOKEN_DIV_ASSIGN, TOKEN_MOD_ASSIGN, TOKEN_ADD_ASSIGN,
   TOKEN_SUB_ASSIGN, TOKEN_LEFT_ASSIGN, TOKEN_RIGHT_ASSIGN, TOKEN_AND_ASSIGN,
   TOKEN_XOR_ASSIGN, TOKEN_OR_ASSIGN, TOKEN_PTR_OP,
   ';', '{', '}', ',', ':', '=', '(', ')', '[', ']', '.', '&', '!', '~', '-',
-  '+', '*', '/', '%', '<', '>', '^', '|', '?',
+  '+', '*', '/', '%', '<', '>', '^', '|', '?', '$'
 };
 
 std::map<int, std::string> tokenToName;
@@ -114,6 +111,7 @@ void ParserInit() {
     tokenToName[TOKEN_EXTERN] = "extern";
     tokenToName[TOKEN_FALSE] = "false";
     tokenToName[TOKEN_FLOAT] = "float";
+    tokenToName[TOKEN_FLOATING] = "floating";
     tokenToName[TOKEN_FOR] = "for";
     tokenToName[TOKEN_FOREACH] = "foreach";
     tokenToName[TOKEN_FOREACH_ACTIVE] = "foreach_active";
@@ -127,10 +125,12 @@ void ParserInit() {
     tokenToName[TOKEN_INT8] = "int8";
     tokenToName[TOKEN_INT16] = "int16";
     tokenToName[TOKEN_INT] = "int";
+    tokenToName[TOKEN_INTEGER] = "integer";
     tokenToName[TOKEN_INT64] = "int64";
     tokenToName[TOKEN_LAUNCH] = "launch";
     tokenToName[TOKEN_NEW] = "new";
     tokenToName[TOKEN_NULL] = "NULL";
+    tokenToName[TOKEN_NUMBER] = "number";
     tokenToName[TOKEN_PRINT] = "print";
     tokenToName[TOKEN_RETURN] = "return";
     tokenToName[TOKEN_SOA] = "soa";
@@ -207,6 +207,7 @@ void ParserInit() {
     tokenToName['|'] = "|";
     tokenToName['?'] = "?";
     tokenToName[';'] = ";";
+    tokenToName['$'] = "$";
 
     tokenNameRemap["TOKEN_ASSERT"] = "\'assert\'";
     tokenNameRemap["TOKEN_BOOL"] = "\'bool\'";
@@ -228,6 +229,7 @@ void ParserInit() {
     tokenNameRemap["TOKEN_EXTERN"] = "\'extern\'";
     tokenNameRemap["TOKEN_FALSE"] = "\'false\'";
     tokenNameRemap["TOKEN_FLOAT"] = "\'float\'";
+    tokenNameRemap["TOKEN_FLOATING"] = "\'floating\'";
     tokenNameRemap["TOKEN_FOR"] = "\'for\'";
     tokenNameRemap["TOKEN_FOREACH"] = "\'foreach\'";
     tokenNameRemap["TOKEN_FOREACH_ACTIVE"] = "\'foreach_active\'";
@@ -243,9 +245,11 @@ void ParserInit() {
     tokenNameRemap["TOKEN_INT16"] = "\'int16\'";
     tokenNameRemap["TOKEN_INT"] = "\'int\'";
     tokenNameRemap["TOKEN_INT64"] = "\'int64\'";
+    tokenNameRemap["TOKEN_INTEGER"] = "\'integer\'";
     tokenNameRemap["TOKEN_LAUNCH"] = "\'launch\'";
     tokenNameRemap["TOKEN_NEW"] = "\'new\'";
     tokenNameRemap["TOKEN_NULL"] = "\'NULL\'";
+    tokenNameRemap["TOKEN_NUMBER"] = "\'number\'";
     tokenNameRemap["TOKEN_PRINT"] = "\'print\'";
     tokenNameRemap["TOKEN_RETURN"] = "\'return\'";
     tokenNameRemap["TOKEN_SOA"] = "\'soa\'";
@@ -381,6 +385,7 @@ export { RT; return TOKEN_EXPORT; }
 extern { RT; return TOKEN_EXTERN; }
 false { RT; return TOKEN_FALSE; }
 float { RT; return TOKEN_FLOAT; }
+floating { RT; return TOKEN_FLOATING; }
 for { RT; return TOKEN_FOR; }
 foreach { RT; return TOKEN_FOREACH; }
 foreach_active { RT; return TOKEN_FOREACH_ACTIVE; }
@@ -395,9 +400,11 @@ int8 { RT; return TOKEN_INT8; }
 int16 { RT; return TOKEN_INT16; }
 int32 { RT; return TOKEN_INT; }
 int64 { RT; return TOKEN_INT64; }
+integer { RT; return TOKEN_INTEGER; }
 launch { RT; return TOKEN_LAUNCH; }
 new { RT; return TOKEN_NEW; }
 NULL { RT; return TOKEN_NULL; }
+number { RT; return TOKEN_NUMBER; }
 print { RT; return TOKEN_PRINT; }
 return { RT; return TOKEN_RETURN; }
 soa { RT; return TOKEN_SOA; }
@@ -521,6 +528,7 @@ L?\"(\\.|[^\\"])*\" { lStringConst(&yylval, &yylloc); return TOKEN_STRING_LITERA
 "^"             { RT; return '^'; }
 "|"             { RT; return '|'; }
 "?"             { RT; return '?'; }
+"$"             { RT; return '$'; }
 
 {WHITESPACE} { }
 

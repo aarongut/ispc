@@ -89,7 +89,8 @@ enum TypeId {
   STRUCT_TYPE,           // 5
   UNDEFINED_STRUCT_TYPE, // 6
   REFERENCE_TYPE,        // 7
-  FUNCTION_TYPE          // 8
+  FUNCTION_TYPE,         // 8
+  POLY_TYPE              // 9
 };
 
 
@@ -362,6 +363,67 @@ private:
     AtomicType(BasicType basicType, Variability v, bool isConst);
 
     mutable const AtomicType *asOtherConstType, *asUniformType, *asVaryingType;
+};
+
+class PolyType : public Type {
+public:
+    Variability GetVariability() const;
+
+    bool IsBoolType() const;
+    bool IsFloatType() const;
+    bool IsIntType() const;
+    bool IsUnsignedType() const;
+    bool IsConstType() const;
+
+    const PolyType *GetBaseType() const;
+    const PolyType *GetAsUniformType() const;
+    const PolyType *GetAsVaryingType() const;
+    const PolyType *GetAsUnboundVariabilityType() const;
+    const PolyType *GetAsSOAType(int width) const;
+
+    const PolyType *ResolveUnboundVariability(Variability v) const;
+    const PolyType *GetAsUnsignedType() const;
+    const PolyType *GetAsConstType() const;
+    const PolyType *GetAsNonConstType() const;
+
+    const PolyType *Quantify(int quant) const;
+
+    std::string GetString() const;
+    std::string Mangle() const;
+    std::string GetCDeclaration(const std::string &name) const;
+
+    llvm::Type *LLVMType(llvm::LLVMContext *ctx) const;
+#if ISPC_LLVM_VERSION <= ISPC_LLVM_3_6
+    llvm::DIType GetDIType(llvm::DIDescriptor scope) const;
+#else // LLVM 3.7++
+    llvm::DIType *GetDIType(llvm::DIScope *scope) const;
+#endif
+
+    enum PolyRestriction {
+      TYPE_INTEGER,
+      TYPE_FLOATING,
+      TYPE_NUMBER
+    };
+
+    const PolyRestriction restriction;
+
+
+    static const PolyType *UniformInteger, *VaryingInteger;
+    static const PolyType *UniformFloating, *VaryingFloating;
+    static const PolyType *UniformNumber, *VaryingNumber;
+
+    // Returns the list of AtomicTypes that are valid instantiations of the
+    // polymorphic type
+    const std::vector<AtomicType *> GetEnumeratedTypes() const;
+
+private:
+    const Variability variability;
+    const bool isConst;
+    const int quant;
+    PolyType(PolyRestriction type, Variability v, bool isConst);
+    PolyType(PolyRestriction type, Variability v, bool isConst, int quant);
+
+    mutable const PolyType *asOtherConstType, *asUniformType, *asVaryingType;
 };
 
 

@@ -673,6 +673,326 @@ llvm::DIType *AtomicType::GetDIType(llvm::DIScope *scope) const {
     }
 }
 
+///////////////////////////////////////////////////////////////////////////
+// PolyType
+
+const PolyType *PolyType::UniformInteger =
+    new PolyType(PolyType::TYPE_INTEGER, Variability::Uniform, false);
+const PolyType *PolyType::VaryingInteger =
+    new PolyType(PolyType::TYPE_INTEGER, Variability::Varying, false);
+const PolyType *PolyType::UniformFloating =
+    new PolyType(PolyType::TYPE_FLOATING, Variability::Uniform, false);
+const PolyType *PolyType::VaryingFloating =
+    new PolyType(PolyType::TYPE_FLOATING, Variability::Varying, false);
+const PolyType *PolyType::UniformNumber =
+    new PolyType(PolyType::TYPE_NUMBER, Variability::Uniform, false);
+const PolyType *PolyType::VaryingNumber =
+    new PolyType(PolyType::TYPE_NUMBER, Variability::Varying, false);
+
+PolyType::PolyType(PolyRestriction r, Variability v, bool ic)
+    : Type(POLY_TYPE), restriction(r), variability(v), isConst(ic), quant(-1) {
+    asOtherConstType = NULL;
+    asUniformType = asVaryingType = NULL;
+}
+
+PolyType::PolyType(PolyRestriction r, Variability v, bool ic, int q)
+    : Type(POLY_TYPE), restriction(r), variability(v), isConst(ic), quant(q) {
+    asOtherConstType = NULL;
+    asUniformType = asVaryingType = NULL;
+}
+
+
+Variability
+PolyType::GetVariability() const {
+    return variability;
+}
+
+
+bool
+PolyType::IsFloatType() const {
+    return (restriction == TYPE_FLOATING);
+}
+
+bool
+PolyType::IsIntType() const {
+    return (restriction == TYPE_INTEGER);
+}
+
+
+bool
+PolyType::IsUnsignedType() const {
+    return false;
+}
+
+
+bool
+PolyType::IsBoolType() const {
+    return false;
+}
+
+
+bool
+PolyType::IsConstType() const {
+    return isConst;
+}
+
+
+const PolyType *
+PolyType::GetAsUnsignedType() const {
+    return NULL;
+}
+
+
+const PolyType *
+PolyType::GetAsConstType() const {
+    if (isConst == true)
+        return this;
+
+    if (asOtherConstType == NULL) {
+        asOtherConstType = new PolyType(restriction, variability, true);
+        asOtherConstType->asOtherConstType = this;
+    }
+    return asOtherConstType;
+}
+
+
+const PolyType *
+PolyType::GetAsNonConstType() const {
+    if (isConst == false)
+        return this;
+
+    if (asOtherConstType == NULL) {
+        asOtherConstType = new PolyType(restriction, variability, false);
+        asOtherConstType->asOtherConstType = this;
+    }
+    return asOtherConstType;
+}
+
+
+const PolyType *
+PolyType::GetBaseType() const {
+    return this;
+}
+
+
+const PolyType *
+PolyType::GetAsVaryingType() const {
+    if (variability == Variability::Varying)
+        return this;
+
+    if (asVaryingType == NULL) {
+        asVaryingType = new PolyType(restriction, Variability::Varying, isConst);
+        if (variability == Variability::Uniform)
+            asVaryingType->asUniformType = this;
+    }
+    return asVaryingType;
+}
+
+
+const PolyType *
+PolyType::GetAsUniformType() const {
+    if (variability == Variability::Uniform)
+        return this;
+
+    if (asUniformType == NULL) {
+        asUniformType = new PolyType(restriction, Variability::Uniform, isConst);
+        if (variability == Variability::Varying)
+            asUniformType->asVaryingType = this;
+    }
+    return asUniformType;
+}
+
+
+const PolyType *
+PolyType::GetAsUnboundVariabilityType() const {
+    if (variability == Variability::Unbound)
+        return this;
+    return new PolyType(restriction, Variability::Unbound, isConst);
+}
+
+
+const PolyType *
+PolyType::GetAsSOAType(int width) const {
+    if (variability == Variability(Variability::SOA, width))
+        return this;
+    return new PolyType(restriction, Variability(Variability::SOA, width),
+                        isConst);
+}
+
+
+const PolyType *
+PolyType::ResolveUnboundVariability(Variability v) const {
+    Assert(v != Variability::Unbound);
+    if (variability != Variability::Unbound)
+        return this;
+    return new PolyType(restriction, v, isConst);
+}
+
+const PolyType *
+PolyType::Quantify(int quant) const {
+    return new PolyType(restriction, variability, isConst, quant);
+}
+
+std::string
+PolyType::GetString() const {
+    std::string ret;
+    if (isConst)   ret += "const ";
+
+    ret += variability.GetString();
+    ret += " ";
+
+    switch (restriction) {
+    case TYPE_INTEGER:    ret += "integer";     break;
+    case TYPE_FLOATING:   ret += "floating";    break;
+    case TYPE_NUMBER:     ret += "number";      break;
+    default: FATAL("Logic error in PolyType::GetString()");
+    }
+    return ret;
+}
+
+
+std::string
+PolyType::Mangle() const {
+    std::string ret;
+    if (isConst)   ret += "C";
+    ret += variability.MangleString();
+
+    switch (restriction) {
+    case TYPE_INTEGER:    ret += "Z";   break;
+    case TYPE_FLOATING:   ret += "Q";   break;
+    case TYPE_NUMBER:     ret += "R";   break;
+    default: FATAL("Logic error in PolyType::Mangle()");
+    }
+    return ret;
+}
+
+
+std::string
+PolyType::GetCDeclaration(const std::string &name) const {
+    std::string ret;
+    if (variability == Variability::Unbound) {
+        Assert(m->errorCount > 0);
+        return ret;
+    }
+    if (isConst) ret += "const ";
+
+    switch (restriction) {
+    case TYPE_INTEGER:    ret += "int32_t";   break;
+    case TYPE_FLOATING:   ret += "double";    break;
+    case TYPE_NUMBER:     ret += "double";    break;
+    default: FATAL("Logic error in PolyType::GetCDeclaration()");
+    }
+
+    if (lShouldPrintName(name)) {
+        ret += " ";
+        ret += name;
+    }
+
+    if (variability == Variability::SOA) {
+        char buf[32];
+        sprintf(buf, "[%d]", variability.soaWidth);
+        ret += buf;
+    }
+
+    return ret;
+}
+
+
+llvm::Type *
+PolyType::LLVMType(llvm::LLVMContext *ctx) const {
+    Assert(variability.type != Variability::Unbound);
+    bool isUniform = (variability == Variability::Uniform);
+    bool isVarying = (variability == Variability::Varying);
+
+    if (isUniform || isVarying) {
+        switch (restriction) {
+        case TYPE_INTEGER:
+            return isUniform ? LLVMTypes::Int32Type : LLVMTypes::Int32VectorType;
+        case TYPE_FLOATING:
+        case TYPE_NUMBER:
+            return isUniform ? LLVMTypes::DoubleType : LLVMTypes::DoubleVectorType;
+        default:
+            FATAL("logic error in PolyType::LLVMType");
+            return NULL;
+        }
+    }
+    else {
+        ArrayType at(GetAsUniformType(), variability.soaWidth);
+        return at.LLVMType(ctx);
+    }
+}
+
+
+#if ISPC_LLVM_VERSION <= ISPC_LLVM_3_6
+llvm::DIType PolyType::GetDIType(llvm::DIDescriptor scope) const {
+#else //LLVM 3.7++
+llvm::DIType *PolyType::GetDIType(llvm::DIScope *scope) const {
+#endif
+    Assert(variability.type != Variability::Unbound);
+
+    if (variability.type == Variability::Uniform) {
+        switch (restriction) {
+#if ISPC_LLVM_VERSION <= ISPC_LLVM_3_9
+        case TYPE_INTEGER:
+            return m->diBuilder->createBasicType("int32", 32 /* size */, 32 /* align */,
+                                                 llvm::dwarf::DW_ATE_signed);
+            break;
+        case TYPE_FLOATING:
+        case TYPE_NUMBER:
+            return m->diBuilder->createBasicType("double", 64 /* size */, 64 /* align */,
+                                                 llvm::dwarf::DW_ATE_float);
+            break;
+#else // LLVM 4.0+
+        case TYPE_INTEGER:
+            return m->diBuilder->createBasicType("int32", 32 /* size */,
+                                                 llvm::dwarf::DW_ATE_signed);
+            break;
+        case TYPE_FLOATING:
+        case TYPE_NUMBER:
+            return m->diBuilder->createBasicType("double", 64 /* size */,
+                                                 llvm::dwarf::DW_ATE_float);
+            break;
+#endif
+
+        default:
+            FATAL("unhandled basic type in PolyType::GetDIType()");
+#if ISPC_LLVM_VERSION <= ISPC_LLVM_3_6
+            return llvm::DIType();
+#else //LLVM 3.7+
+            return NULL;
+#endif
+        }
+    }
+    else if (variability == Variability::Varying) {
+#if ISPC_LLVM_VERSION == ISPC_LLVM_3_2
+        llvm::Value *sub = m->diBuilder->getOrCreateSubrange(0, g->target->getVectorWidth()-1);
+#elif ISPC_LLVM_VERSION > ISPC_VERSION_3_2 && ISPC_LLVM_VERSION <= ISPC_LLVM_3_5
+        llvm::Value *sub = m->diBuilder->getOrCreateSubrange(0, g->target->getVectorWidth());
+#else // LLVM 3.6+
+        llvm::Metadata *sub = m->diBuilder->getOrCreateSubrange(0, g->target->getVectorWidth());
+#endif
+#if ISPC_LLVM_VERSION > ISPC_VERSION_3_2 && ISPC_LLVM_VERSION <= ISPC_LLVM_3_6
+        llvm::DIArray subArray = m->diBuilder->getOrCreateArray(sub);
+        llvm::DIType unifType = GetAsUniformType()->GetDIType(scope);
+        uint64_t size =  unifType.getSizeInBits()  * g->target->getVectorWidth();
+        uint64_t align = unifType.getAlignInBits() * g->target->getVectorWidth();
+#else // LLVM 3.7+
+        llvm::DINodeArray subArray = m->diBuilder->getOrCreateArray(sub);
+        llvm::DIType *unifType = GetAsUniformType()->GetDIType(scope);
+        //llvm::DebugNodeArray subArray = m->diBuilder->getOrCreateArray(sub);
+        //llvm::MDType *unifType = GetAsUniformType()->GetDIType(scope);
+        uint64_t size =  unifType->getSizeInBits() * g->target->getVectorWidth();
+        uint64_t align = unifType->getAlignInBits()* g->target->getVectorWidth();
+#endif
+        return m->diBuilder->createVectorType(size, align, unifType, subArray);
+    }
+    else {
+        Assert(variability == Variability::SOA);
+        ArrayType at(GetAsUniformType(), variability.soaWidth);
+        return at.GetDIType(scope);
+    }
+}
+
 
 ///////////////////////////////////////////////////////////////////////////
 // EnumType
