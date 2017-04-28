@@ -368,6 +368,7 @@ private:
 class PolyType : public Type {
 public:
     Variability GetVariability() const;
+    int GetQuant() const;
 
     bool IsBoolType() const;
     bool IsFloatType() const;
@@ -1060,6 +1061,14 @@ template <> inline const AtomicType *
 CastType(const Type *type) {
     if (type != NULL && type->typeId == ATOMIC_TYPE)
         return (const AtomicType *)type;
+    else
+        return NULL;
+}
+
+template <> inline const PolyType *
+CastType(const Type *type) {
+    if (type != NULL && type->typeId == POLY_TYPE)
+        return (const PolyType *)type;
     else
         return NULL;
 }

@@ -707,6 +707,11 @@ PolyType::GetVariability() const {
     return variability;
 }
 
+int
+PolyType::GetQuant() const {
+    return quant;
+}
+
 
 bool
 PolyType::IsFloatType() const {
@@ -749,7 +754,7 @@ PolyType::GetAsConstType() const {
         return this;
 
     if (asOtherConstType == NULL) {
-        asOtherConstType = new PolyType(restriction, variability, true);
+        asOtherConstType = new PolyType(restriction, variability, true, quant);
         asOtherConstType->asOtherConstType = this;
     }
     return asOtherConstType;
@@ -762,7 +767,7 @@ PolyType::GetAsNonConstType() const {
         return this;
 
     if (asOtherConstType == NULL) {
-        asOtherConstType = new PolyType(restriction, variability, false);
+        asOtherConstType = new PolyType(restriction, variability, false, quant);
         asOtherConstType->asOtherConstType = this;
     }
     return asOtherConstType;
@@ -781,7 +786,8 @@ PolyType::GetAsVaryingType() const {
         return this;
 
     if (asVaryingType == NULL) {
-        asVaryingType = new PolyType(restriction, Variability::Varying, isConst);
+        asVaryingType = new PolyType(restriction, Variability::Varying,
+                                     isConst, quant);
         if (variability == Variability::Uniform)
             asVaryingType->asUniformType = this;
     }
@@ -795,7 +801,8 @@ PolyType::GetAsUniformType() const {
         return this;
 
     if (asUniformType == NULL) {
-        asUniformType = new PolyType(restriction, Variability::Uniform, isConst);
+        asUniformType = new PolyType(restriction, Variability::Uniform,
+                                     isConst, quant);
         if (variability == Variability::Varying)
             asUniformType->asVaryingType = this;
     }
@@ -807,7 +814,7 @@ const PolyType *
 PolyType::GetAsUnboundVariabilityType() const {
     if (variability == Variability::Unbound)
         return this;
-    return new PolyType(restriction, Variability::Unbound, isConst);
+    return new PolyType(restriction, Variability::Unbound, isConst, quant);
 }
 
 
@@ -816,7 +823,7 @@ PolyType::GetAsSOAType(int width) const {
     if (variability == Variability(Variability::SOA, width))
         return this;
     return new PolyType(restriction, Variability(Variability::SOA, width),
-                        isConst);
+                        isConst, quant);
 }
 
 
@@ -825,12 +832,12 @@ PolyType::ResolveUnboundVariability(Variability v) const {
     Assert(v != Variability::Unbound);
     if (variability != Variability::Unbound)
         return this;
-    return new PolyType(restriction, v, isConst);
+    return new PolyType(restriction, v, isConst, quant);
 }
 
 const PolyType *
-PolyType::Quantify(int quant) const {
-    return new PolyType(restriction, variability, isConst, quant);
+PolyType::Quantify(int q) const {
+    return new PolyType(restriction, variability, isConst, q);
 }
 
 std::string
@@ -847,6 +854,12 @@ PolyType::GetString() const {
     case TYPE_NUMBER:     ret += "number";      break;
     default: FATAL("Logic error in PolyType::GetString()");
     }
+    
+    if (quant >= 0) {
+        ret += "$";
+        ret += std::to_string(quant);
+    }
+
     return ret;
 }
 
@@ -3910,6 +3923,14 @@ lCheckTypeEquality(const Type *a, const Type *b, bool ignoreConst) {
     if (ata != NULL && atb != NULL) {
         return ((ata->basicType == atb->basicType) &&
                 (ata->GetVariability() == atb->GetVariability()));
+    }
+
+    const PolyType *pyta = CastType<PolyType>(a);
+    const PolyType *pytb = CastType<PolyType>(b);
+    if (pyta != NULL && pytb != NULL) {
+        return ((pyta->restriction == pytb->restriction) &&
+                (pyta->GetVariability() == pytb->GetVariability()) &&
+                (pyta->GetQuant() == pytb->GetQuant()));
     }
 
     // For all of the other types, we need to see if we have the same two
