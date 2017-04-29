@@ -276,6 +276,8 @@ lDoTypeConv(const Type *fromType, const Type *toType, Expr **expr,
     const AtomicType *fromAtomicType = CastType<AtomicType>(fromType);
     const PointerType *fromPointerType = CastType<PointerType>(fromType);
     const PointerType *toPointerType = CastType<PointerType>(toType);
+    const PolyType *fromPolyType = CastType<PolyType>(fromType);
+    const PolyType *toPolyType = CastType<PolyType>(toType);
 
     // Do this early, since for the case of a conversion like
     // "float foo[10]" -> "float * uniform foo", we have what's seemingly
@@ -543,6 +545,20 @@ lDoTypeConv(const Type *fromType, const Type *toType, Expr **expr,
         AssertPos(pos, toAtomicType != NULL || toVectorType != NULL);
         goto typecast_ok;
     }
+
+    // atomic -> polymorphic
+    if ((fromAtomicType || fromPolyType) && toPolyType) {
+        if (toPolyType->CanBeType(fromType)) {
+            goto typecast_ok;
+        } else {
+            if (!failureOk) {
+                Error(pos, "Can't convert between \"%s\" and polymorphic type "
+                      "\"%s\" for %s", fromType->GetString().c_str(),
+                      toPolyType->GetString().c_str(), errorMsgBase);
+            }
+        }
+    }
+
 
     // from here on out, the from type can only be atomic something or
     // other...
