@@ -840,6 +840,32 @@ PolyType::Quantify(int q) const {
     return new PolyType(restriction, variability, isConst, q);
 }
 
+bool
+PolyType::CanBeType(const Type *t) const {
+    const PolyType *pt = CastType<PolyType>(t);
+    if (pt) {
+        return (restriction == pt->restriction ||
+                restriction == TYPE_NUMBER);
+    }
+
+    const AtomicType *at = CastType<AtomicType>(t);
+
+    switch (restriction) {
+        case TYPE_INTEGER:
+            return at->IsIntType();
+        case TYPE_FLOATING:
+            return at->IsFloatType();
+        case TYPE_NUMBER:
+            return at->IsIntType() || at->IsFloatType();
+        default:
+            FATAL("Unmatched case for polymorphic restriction");
+    }
+
+    // not an atomic type or polymorphic type
+    return false;
+}
+
+
 std::string
 PolyType::GetString() const {
     std::string ret;
@@ -3884,6 +3910,24 @@ Type::MoreGeneralType(const Type *t0, const Type *t1, SourcePos pos, const char 
                   "non-atomic type \"%s\" for %s not possible.",
                   t1->GetString().c_str(), t0->GetString().c_str(), reason);
             return NULL;
+        }
+    }
+
+    const PolyType *pyt0 = CastType<PolyType>(t0);
+    const PolyType *pyt1 = CastType<PolyType>(t1);
+
+    if (pyt0 || pyt1) {
+        // one of the types is polymorphic
+        if (pyt0 && pyt0->CanBeType(t1)) {
+            return pyt0;
+        } else if (pyt1 && pyt1->CanBeType(t0)) {
+            return pyt1;
+        } else {
+            // polymorphic type cannot represent the other type
+            // this is most likely bad
+            Error(pos, "Polymorphic type incompatible for \"%s\" and \"%s\""
+                  " for %s.", t0->GetString().c_str(),
+                  t1->GetString().c_str(), reason);
         }
     }
 

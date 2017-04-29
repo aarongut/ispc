@@ -389,6 +389,8 @@ public:
 
     const PolyType *Quantify(int quant) const;
 
+    bool CanBeType(const Type *t) const;
+
     std::string GetString() const;
     std::string Mangle() const;
     std::string GetCDeclaration(const std::string &name) const;
