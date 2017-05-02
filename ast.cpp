@@ -58,7 +58,14 @@ void
 AST::AddFunction(Symbol *sym, Stmt *code) {
     if (sym == NULL)
         return;
-    functions.push_back(new Function(sym, code));
+
+    Function *f = new Function(sym, code);
+
+    if (f->IsPolyFunction()) {
+        FATAL("This is a good start, but implement me!");
+    } else {
+        functions.push_back(f);
+    }
 }
 
 

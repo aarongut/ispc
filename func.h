@@ -51,6 +51,9 @@ public:
     /** Generate LLVM IR for the function into the current module. */
     void GenerateIR();
 
+    /** Checks if the function has polymorphic parameters */
+    const bool IsPolyFunction() const;
+
 private:
     void emitCode(FunctionEmitContext *ctx, llvm::Function *function,
                   SourcePos firstStmtPos);

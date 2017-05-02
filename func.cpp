@@ -627,3 +627,14 @@ Function::GenerateIR() {
         }
     }
 }
+
+const bool
+Function::IsPolyFunction() const {
+    for (size_t i = 0; i < args.size(); i++) {
+        if (args[i]->type->IsPolymorphicType()) {
+            return true;
+        }
+    }
+
+    return false;
+}

@@ -248,6 +248,11 @@ Type::IsVoidType() const {
 }
 
 bool
+Type::IsPolymorphicType() const {
+    return (CastType<PolyType>(GetBaseType()) != NULL);
+}
+
+bool
 AtomicType::IsFloatType() const {
     return (basicType == TYPE_FLOAT || basicType == TYPE_DOUBLE);
 }
