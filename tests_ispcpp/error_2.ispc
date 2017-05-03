@@ -1,6 +1,6 @@
 //@error
 //assigning mismatched polymorphic types
 
-export void foo(number$0 bar) {
-    floating$0 baz = bar;
+export void foo(uniform floating$0 bar) {
+    integer baz = bar;
 }

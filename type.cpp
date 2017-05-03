@@ -855,15 +855,17 @@ PolyType::CanBeType(const Type *t) const {
 
     const AtomicType *at = CastType<AtomicType>(t);
 
-    switch (restriction) {
-        case TYPE_INTEGER:
-            return at->IsIntType();
-        case TYPE_FLOATING:
-            return at->IsFloatType();
-        case TYPE_NUMBER:
-            return at->IsIntType() || at->IsFloatType();
-        default:
-            FATAL("Unmatched case for polymorphic restriction");
+    if (at) {
+        switch (restriction) {
+            case TYPE_INTEGER:
+                return at->IsIntType();
+            case TYPE_FLOATING:
+                return at->IsFloatType();
+            case TYPE_NUMBER:
+                return at->IsIntType() || at->IsFloatType();
+            default:
+                FATAL("Unmatched case for polymorphic restriction");
+        }
     }
 
     // not an atomic type or polymorphic type
