@@ -70,6 +70,7 @@ public:
     // Stmts don't have anything to do here.
     virtual Stmt *Optimize();
     virtual Stmt *TypeCheck() = 0;
+    Stmt *ReplacePolyType(const PolyType *polyType, const Type *replacement);
 };
 
 

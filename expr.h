@@ -96,6 +96,10 @@ public:
         encountered, NULL should be returned. */
     virtual Expr *TypeCheck() = 0;
 
+
+    /** This method replaces a polymorphic type with a specific atomic type */
+    Expr *ReplacePolyType(const PolyType *polyType, const Type *replacement);
+
     /** Prints the expression to standard output (used for debugging). */
     virtual void Print() const = 0;
 };

@@ -698,12 +698,14 @@ PolyType::PolyType(PolyRestriction r, Variability v, bool ic)
     : Type(POLY_TYPE), restriction(r), variability(v), isConst(ic), quant(-1) {
     asOtherConstType = NULL;
     asUniformType = asVaryingType = NULL;
+    expandedTypes = NULL;
 }
 
 PolyType::PolyType(PolyRestriction r, Variability v, bool ic, int q)
     : Type(POLY_TYPE), restriction(r), variability(v), isConst(ic), quant(q) {
     asOtherConstType = NULL;
     asUniformType = asVaryingType = NULL;
+    expandedTypes = NULL;
 }
 
 
@@ -813,6 +815,39 @@ PolyType::GetAsUniformType() const {
     }
     return asUniformType;
 }
+
+const std::vector<AtomicType *>::iterator 
+PolyType::ExpandBegin() const {
+    if (expandedTypes)
+        return expandedTypes->begin();
+
+    expandedTypes = new std::vector<AtomicType *>();
+
+    if (restriction == TYPE_INTEGER || restriction == TYPE_NUMBER) {
+        expandedTypes->push_back(new AtomicType(AtomicType::TYPE_INT8, variability, isConst));
+        expandedTypes->push_back(new AtomicType(AtomicType::TYPE_UINT8, variability, isConst));
+        expandedTypes->push_back(new AtomicType(AtomicType::TYPE_INT16, variability, isConst));
+        expandedTypes->push_back(new AtomicType(AtomicType::TYPE_UINT16, variability, isConst));
+        expandedTypes->push_back(new AtomicType(AtomicType::TYPE_INT32, variability, isConst));
+        expandedTypes->push_back(new AtomicType(AtomicType::TYPE_UINT32, variability, isConst));
+        expandedTypes->push_back(new AtomicType(AtomicType::TYPE_INT64, variability, isConst));
+        expandedTypes->push_back(new AtomicType(AtomicType::TYPE_UINT64, variability, isConst));
+    }
+    if (restriction == TYPE_FLOATING || restriction == TYPE_NUMBER) {
+        expandedTypes->push_back(new AtomicType(AtomicType::TYPE_FLOAT, variability, isConst));
+        expandedTypes->push_back(new AtomicType(AtomicType::TYPE_DOUBLE, variability, isConst));
+    }
+
+    return expandedTypes->begin();
+}
+
+const std::vector<AtomicType *>::iterator 
+PolyType::ExpandEnd() const {
+    Assert(expandedTypes != NULL);
+
+    return expandedTypes->end();
+}
+
 
 
 const PolyType *

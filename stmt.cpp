@@ -77,6 +77,11 @@ Stmt::Optimize() {
     return this;
 }
 
+Stmt *
+Stmt::ReplacePolyType(const PolyType *polyType, const Type *replacement) {
+    return this;
+}
+
 
 ///////////////////////////////////////////////////////////////////////////
 // ExprStmt

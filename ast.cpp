@@ -42,7 +42,10 @@
 #include "func.h"
 #include "stmt.h"
 #include "sym.h"
+#include "type.h"
 #include "util.h"
+
+#include <map>
 
 ///////////////////////////////////////////////////////////////////////////
 // ASTNode
@@ -62,7 +65,9 @@ AST::AddFunction(Symbol *sym, Stmt *code) {
     Function *f = new Function(sym, code);
 
     if (f->IsPolyFunction()) {
-        FATAL("This is a good start, but implement me!");
+        std::vector<Function *> *expanded = f->ExpandPolyArguments();
+        for (size_t i=0; i<expanded->size(); i++)
+            functions.push_back((*expanded)[i]);
     } else {
         functions.push_back(f);
     }
@@ -514,4 +519,26 @@ SafeToRunWithMaskAllOff(ASTNode *root) {
     bool safe = true;
     WalkAST(root, lCheckAllOffSafety, NULL, &safe);
     return safe;
+}
+
+struct PolyData {
+    const PolyType *polyType;
+    const Type *replacement;
+};
+
+
+static ASTNode *
+lTranslatePolyNode(ASTNode *node, void *d) {
+    struct PolyData *data = (struct PolyData*)d;
+
+    return node->ReplacePolyType(data->polyType, data->replacement);
+}
+
+ASTNode *
+TranslatePoly(ASTNode *root, const PolyType *polyType, const Type *replacement) {
+    struct PolyData data;
+    data.polyType = polyType;
+    data.replacement = replacement;
+
+    return WalkAST(root, NULL, lTranslatePolyNode, &replacement);
 }

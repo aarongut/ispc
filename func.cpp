@@ -638,3 +638,42 @@ Function::IsPolyFunction() const {
 
     return false;
 }
+
+std::vector<Function *> *
+Function::ExpandPolyArguments() const {
+    std::vector<const Type *> toExpand;
+    std::vector<Function *> *expanded = new std::vector<Function *>();
+
+    for (size_t i = 0; i < args.size(); i++) {
+        if (args[i]->type->IsPolymorphicType()) {
+            toExpand.push_back(args[i]->type);
+        }
+    }
+
+    for (size_t i = 0; i < toExpand.size(); i++) {
+        const PolyType *pt = CastType<PolyType>(toExpand[i]->GetBaseType());
+
+        std::vector<AtomicType *>::iterator expanded;
+        expanded = pt->ExpandBegin();
+        for (; expanded != pt->ExpandEnd(); expanded++) {
+            Type *replacement = *expanded;
+
+            if (toExpand[i]->IsPointerType())
+                replacement = new PointerType(replacement,
+                        toExpand[i]->GetVariability(),
+                        toExpand[i]->IsConstType());
+            else if (toExpand[i]->IsArrayType())
+                replacement = new ArrayType(replacement,
+                        (CastType<ArrayType>(toExpand[i]))->GetElementCount());
+            else if (toExpand[i]->IsReferenceType())
+                replacement = new ReferenceType(replacement);
+
+
+            printf("pretend I'm replacing %s with %s\n",
+                    toExpand[i]->GetString().c_str(),
+                    replacement->GetString().c_str());
+        }
+    }
+
+    return expanded;
+}

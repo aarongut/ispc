@@ -54,6 +54,8 @@ public:
     /** Checks if the function has polymorphic parameters */
     const bool IsPolyFunction() const;
 
+    std::vector<Function *> *ExpandPolyArguments() const;
+
 private:
     void emitCode(FunctionEmitContext *ctx, llvm::Function *function,
                   SourcePos firstStmtPos);

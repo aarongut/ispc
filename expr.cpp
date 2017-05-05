@@ -112,6 +112,11 @@ Expr::GetBaseSymbol() const {
     return NULL;
 }
 
+Expr *
+Expr::ReplacePolyType(const PolyType *polyType, const Type *replacement) {
+    return this;
+}
+
 
 #if 0
 /** If a conversion from 'fromAtomicType' to 'toAtomicType' may cause lost

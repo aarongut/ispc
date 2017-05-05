@@ -39,6 +39,7 @@
 #define ISPC_AST_H 1
 
 #include "ispc.h"
+#include "type.h"
 #include <vector>
 
 /** @brief Abstract base class for nodes in the abstract syntax tree (AST).
@@ -67,6 +68,8 @@ public:
         pointer in place of the original ASTNode *. */
     virtual ASTNode *TypeCheck() = 0;
 
+    virtual ASTNode *ReplacePolyType(const PolyType *, const Type *) = 0;
+
     /** Estimate the execution cost of the node (not including the cost of
         the children.  The value returned should be based on the COST_*
         enumerant values defined in ispc.h. */
@@ -75,8 +78,8 @@ public:
     /** All AST nodes must track the file position where they are
         defined. */
     SourcePos pos;
-   
-    /** An enumeration for keeping track of the concrete subclass of Value 
+
+    /** An enumeration for keeping track of the concrete subclass of Value
         that is actually instantiated.*/
     enum ASTNodeTy {
         /* For classes inherited from Expr */
@@ -127,9 +130,9 @@ public:
         SwitchStmtID,
         UnmaskedStmtID
     };
-   
+
     /** Return an ID for the concrete type of this object. This is used to
-        implement the classof checks.  This should not be used for any 
+        implement the classof checks.  This should not be used for any
         other purpose, as the values may change as ISPC evolves */
     unsigned getValueID() const {
         return SubclassID;

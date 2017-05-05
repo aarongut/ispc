@@ -360,10 +360,10 @@ public:
     static const AtomicType *UniformDouble, *VaryingDouble;
     static const AtomicType *Void;
 
+    AtomicType(BasicType basicType, Variability v, bool isConst);
 private:
     const Variability variability;
     const bool isConst;
-    AtomicType(BasicType basicType, Variability v, bool isConst);
 
     mutable const AtomicType *asOtherConstType, *asUniformType, *asVaryingType;
 };
@@ -420,7 +420,8 @@ public:
 
     // Returns the list of AtomicTypes that are valid instantiations of the
     // polymorphic type
-    const std::vector<AtomicType *> GetEnumeratedTypes() const;
+    const std::vector<AtomicType *>::iterator ExpandBegin() const;
+    const std::vector<AtomicType *>::iterator ExpandEnd() const;
 
 private:
     const Variability variability;
@@ -430,6 +431,7 @@ private:
     PolyType(PolyRestriction type, Variability v, bool isConst, int quant);
 
     mutable const PolyType *asOtherConstType, *asUniformType, *asVaryingType;
+    mutable std::vector<AtomicType *> *expandedTypes;
 };
 
 
