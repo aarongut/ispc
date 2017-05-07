@@ -150,11 +150,11 @@ lHasUnsizedArrays(const Type *type) {
 #ifdef ISPC_NVPTX_ENABLED
 static llvm::Value* lConvertToGenericPtr(FunctionEmitContext *ctx, llvm::Value *value, const SourcePos &currentPos, const bool variable = false)
 {
-  if (!value->getType()->isPointerTy() || g->target->getISA() != Target::NVPTX) 
+  if (!value->getType()->isPointerTy() || g->target->getISA() != Target::NVPTX)
     return value;
   llvm::PointerType *pt = llvm::dyn_cast<llvm::PointerType>(value->getType());
   const int addressSpace = pt->getAddressSpace();
-  if (addressSpace != 3 && addressSpace != 4) 
+  if (addressSpace != 3 && addressSpace != 4)
     return value;
 
   llvm::Type *elTy = pt->getElementType();
@@ -276,17 +276,17 @@ DeclStmt::EmitCode(FunctionEmitContext *ctx) const {
 #ifdef ISPC_NVPTX_ENABLED
             if (g->target->getISA() == Target::NVPTX && !sym->type->IsConstType())
             {
-                Error(sym->pos, 
+                Error(sym->pos,
                     "Non-constant static variable ""\"%s\" is not supported with ""\"nvptx\" target.",
                     sym->name.c_str());
                 return;
             }
             if (g->target->getISA() == Target::NVPTX && sym->type->IsVaryingType())
-                PerformanceWarning(sym->pos, 
+                PerformanceWarning(sym->pos,
                     "\"const static varying\" variable ""\"%s\" is stored in __global address space with ""\"nvptx\" target.",
                     sym->name.c_str());
             if (g->target->getISA() == Target::NVPTX && sym->type->IsUniformType())
-                PerformanceWarning(sym->pos, 
+                PerformanceWarning(sym->pos,
                     "\"const static uniform\" variable ""\"%s\" is stored in __constant address space with ""\"nvptx\" target.",
                     sym->name.c_str());
 #endif /* ISPC_NVPTX_ENABLED */
@@ -351,11 +351,11 @@ DeclStmt::EmitCode(FunctionEmitContext *ctx) const {
 #ifdef ISPC_NVPTX_ENABLED
         else if ((sym->type->IsUniformType() || sym->type->IsSOAType()) &&
           /* NVPTX:
-           * only non-constant uniform data types are stored in shared memory 
-           * constant uniform are automatically promoted to varying 
+           * only non-constant uniform data types are stored in shared memory
+           * constant uniform are automatically promoted to varying
            */
            !sym->type->IsConstType() &&
-#if 1     
+#if 1
            sym->type->IsArrayType() &&
 #endif
            g->target->getISA() == Target::NVPTX)
@@ -375,7 +375,7 @@ DeclStmt::EmitCode(FunctionEmitContext *ctx) const {
                  * or 128 threads.
                  * ***note-to-me***:please define these value (128threads/4warps)
                  * in nvptx-target definition
-                 * instead of compile-time constants 
+                 * instead of compile-time constants
                  */
                 nel *= at->GetElementCount();
                 if (sym->type->IsSOAType())
@@ -392,9 +392,9 @@ DeclStmt::EmitCode(FunctionEmitContext *ctx) const {
               sym->storagePtr =
                 new llvm::GlobalVariable(*m->module, llvmTypeUn,
                     sym->type->IsConstType(),
-                    llvm::GlobalValue::InternalLinkage, 
+                    llvm::GlobalValue::InternalLinkage,
                     cinit,
-                    llvm::Twine("local_") + 
+                    llvm::Twine("local_") +
                     llvm::Twine(sym->pos.first_line) +
                     llvm::Twine("_") + sym->name.c_str(),
                     NULL,
@@ -595,7 +595,7 @@ IfStmt::EmitCode(FunctionEmitContext *ctx) const {
 #if 0
     if (!isUniform && g->target->getISA() == Target::NVPTX)
     {
-      /* With "nvptx" target, SIMT hardware takes care of non-uniform 
+      /* With "nvptx" target, SIMT hardware takes care of non-uniform
        * control flow. We trick ISPC to generate uniform control flow.
        */
       testValue = ctx->ExtractInst(testValue, 0);
@@ -1500,9 +1500,9 @@ lUpdateVaryingCounter(int dim, int nDims, FunctionEmitContext *ctx,
       // (0,1,2,3,0,1,2,3), and for the outer dimension we want
       // (0,0,0,0,1,1,1,1).
       int32_t delta[ISPC_MAX_NVEC];
-      const int vecWidth = 32; 
+      const int vecWidth = 32;
       std::vector<llvm::Constant*> constDeltaList;
-      for (int i = 0; i < vecWidth; ++i) 
+      for (int i = 0; i < vecWidth; ++i)
       {
         int d = i;
         // First, account for the effect of any dimensions at deeper
@@ -1699,7 +1699,7 @@ ForeachStmt::EmitCode(FunctionEmitContext *ctx) const {
 
     std::vector<int> span(nDims, 0);
 #ifdef ISPC_NVPTX_ENABLED
-    const int vectorWidth = 
+    const int vectorWidth =
       g->target->getISA() == Target::NVPTX ? 32 : g->target->getVectorWidth();
     lGetSpans(nDims-1, nDims, vectorWidth, isTiled, &span[0]);
 #else /* ISPC_NVPTX_ENABLED */
@@ -3343,7 +3343,7 @@ lProcessPrintArg(Expr *expr, FunctionEmitContext *ctx, std::string &argTypes) {
     }
     else {
         if (Type::Equal(baseType, AtomicType::UniformBool)) {
-          // Blast bools to ints, but do it here to preserve encoding for 
+          // Blast bools to ints, but do it here to preserve encoding for
           // printing 'true' or 'false'
             expr = new TypeCastExpr(type->IsUniformType() ? AtomicType::UniformInt32 :
                                                             AtomicType::VaryingInt32,

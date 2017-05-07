@@ -497,7 +497,7 @@ lCheckAllOffSafety(ASTNode *node, void *data) {
     }
 
     /*
-      Don't allow turning if/else to straight-line-code if we 
+      Don't allow turning if/else to straight-line-code if we
       assign to a uniform.
     */
     AssignExpr *ae;

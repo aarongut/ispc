@@ -140,7 +140,7 @@ Function::Function(Symbol *s, Stmt *c) {
 
     if (type->isTask
 #ifdef ISPC_NVPTX_ENABLED
-        && (g->target->getISA() != Target::NVPTX) 
+        && (g->target->getISA() != Target::NVPTX)
 #endif
        ){
         threadIndexSym = m->symbolTable->LookupVariable("threadIndex");
@@ -260,8 +260,8 @@ Function::emitCode(FunctionEmitContext *ctx, llvm::Function *function,
     Assert(type != NULL);
     if (type->isTask == true
 #ifdef ISPC_NVPTX_ENABLED
-        && (g->target->getISA() != Target::NVPTX) 
-#endif 
+        && (g->target->getISA() != Target::NVPTX)
+#endif
        ){
         // For tasks, there should always be three parameters: the
         // pointer to the structure that holds all of the arguments, the
@@ -322,14 +322,14 @@ Function::emitCode(FunctionEmitContext *ctx, llvm::Function *function,
 
         taskCountSym->storagePtr = ctx->AllocaInst(LLVMTypes::Int32Type, "taskCount");
         ctx->StoreInst(taskCount, taskCountSym->storagePtr);
-        
+
         taskIndexSym0->storagePtr = ctx->AllocaInst(LLVMTypes::Int32Type, "taskIndex0");
         ctx->StoreInst(taskIndex0, taskIndexSym0->storagePtr);
         taskIndexSym1->storagePtr = ctx->AllocaInst(LLVMTypes::Int32Type, "taskIndex1");
         ctx->StoreInst(taskIndex1, taskIndexSym1->storagePtr);
         taskIndexSym2->storagePtr = ctx->AllocaInst(LLVMTypes::Int32Type, "taskIndex2");
         ctx->StoreInst(taskIndex2, taskIndexSym2->storagePtr);
-        
+
         taskCountSym0->storagePtr = ctx->AllocaInst(LLVMTypes::Int32Type, "taskCount0");
         ctx->StoreInst(taskCount0, taskCountSym0->storagePtr);
         taskCountSym1->storagePtr = ctx->AllocaInst(LLVMTypes::Int32Type, "taskCount1");
@@ -570,7 +570,7 @@ Function::GenerateIR() {
                   av.push_back(function);
                   av.push_back(llvm::MDString::get(*g->ctx, "kernel"));
                   av.push_back(llvm::ConstantInt::get(llvm::IntegerType::get(*g->ctx,32), 1));
-                  annotations->addOperand(llvm::MDNode::get(*g->ctx, av)); 
+                  annotations->addOperand(llvm::MDNode::get(*g->ctx, av));
 #endif
                 }
 #endif /* ISPC_NVPTX_ENABLED */
@@ -611,7 +611,7 @@ Function::GenerateIR() {
                       av.push_back(llvm::ValueAsMetadata::get(appFunction));
                       av.push_back(llvm::MDString::get(*g->ctx, "kernel"));
                       av.push_back(llvm::ConstantAsMetadata::get(llvm::ConstantInt::get(llvm::IntegerType::get(*g->ctx,32), 1)));
-                      annotations->addOperand(llvm::MDNode::get(*g->ctx, llvm::ArrayRef<llvm::Metadata*>(av))); 
+                      annotations->addOperand(llvm::MDNode::get(*g->ctx, llvm::ArrayRef<llvm::Metadata*>(av)));
 #else
                       llvm::SmallVector<llvm::Value*, 3> av;
                       av.push_back(appFunction);
