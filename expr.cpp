@@ -3204,7 +3204,7 @@ static llvm::Value *
 lEmitVaryingSelect(FunctionEmitContext *ctx, llvm::Value *test,
                    llvm::Value *expr1, llvm::Value *expr2,
                    const Type *type) {
-    
+
     llvm::Value *resultPtr = ctx->AllocaInst(expr1->getType(), "selectexpr_tmp");
     // Don't need to worry about masking here
     ctx->StoreInst(expr2, resultPtr);
@@ -3704,7 +3704,7 @@ FunctionCallExpr::GetValue(FunctionEmitContext *ctx) const {
     ctx->SetDebugPos(pos);
     if (ft->isTask) {
         AssertPos(pos, launchCountExpr[0] != NULL);
-        llvm::Value *launchCount[3] = 
+        llvm::Value *launchCount[3] =
         { launchCountExpr[0]->GetValue(ctx),
           launchCountExpr[1]->GetValue(ctx),
           launchCountExpr[2]->GetValue(ctx) };
@@ -3773,7 +3773,7 @@ FunctionCallExpr::GetType() const {
 const Type *
 FunctionCallExpr::GetLValueType() const {
     const FunctionType *ftype = lGetFunctionType(func);
-    if (ftype && (ftype->GetReturnType()->IsPointerType() 
+    if (ftype && (ftype->GetReturnType()->IsPointerType()
                   || ftype->GetReturnType()->IsReferenceType())) {
         return ftype->GetReturnType();
     }
@@ -4314,7 +4314,7 @@ IndexExpr::GetValue(FunctionEmitContext *ctx) const {
     }
     else {
         Symbol *baseSym = GetBaseSymbol();
-        if (llvm::dyn_cast<FunctionCallExpr>(baseExpr) == NULL && 
+        if (llvm::dyn_cast<FunctionCallExpr>(baseExpr) == NULL &&
             llvm::dyn_cast<BinaryExpr>(baseExpr) == NULL) {
           // Don't check if we're doing a function call or pointer arith
             AssertPos(pos, baseSym != NULL);
@@ -5168,7 +5168,7 @@ MemberExpr::create(Expr *e, const char *id, SourcePos p, SourcePos idpos,
     }
     if (CastType<StructType>(exprType) != NULL) {
       const StructType *st = CastType<StructType>(exprType);
-      if (st->IsDefined()) { 
+      if (st->IsDefined()) {
         return new StructMemberExpr(e, id, p, idpos, derefLValue);
       }
       else {
@@ -7224,7 +7224,7 @@ TypeCastExpr::TypeCheck() {
       // Issues #721
       return this;
     }
-    
+
     const AtomicType *fromAtomic = CastType<AtomicType>(fromType);
     const AtomicType *toAtomic = CastType<AtomicType>(toType);
     const EnumType *fromEnum = CastType<EnumType>(fromType);

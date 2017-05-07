@@ -166,12 +166,12 @@ public:
     };
 
     BinaryExpr(Op o, Expr *a, Expr *b, SourcePos p);
-    
+
     static inline bool classof(BinaryExpr const*) { return true; }
     static inline bool classof(ASTNode const* N) {
         return N->getValueID() == BinaryExprID;
     }
-    
+
     llvm::Value *GetValue(FunctionEmitContext *ctx) const;
     const Type *GetType() const;
     const Type *GetLValueType() const;
@@ -209,7 +209,7 @@ public:
     static inline bool classof(ASTNode const* N) {
         return N->getValueID() == AssignExprID;
     }
- 
+
     llvm::Value *GetValue(FunctionEmitContext *ctx) const;
     const Type *GetType() const;
     void Print() const;
@@ -235,7 +235,7 @@ public:
     static inline bool classof(ASTNode const* N) {
         return N->getValueID() == SelectExprID;
     }
- 
+
     llvm::Value *GetValue(FunctionEmitContext *ctx) const;
     const Type *GetType() const;
     void Print() const;
@@ -262,7 +262,7 @@ public:
     static inline bool classof(ASTNode const* N) {
         return N->getValueID() == ExprListID;
     }
- 
+
     llvm::Value *GetValue(FunctionEmitContext *ctx) const;
     const Type *GetType() const;
     void Print() const;
@@ -280,14 +280,14 @@ public:
 class FunctionCallExpr : public Expr {
 public:
     FunctionCallExpr(Expr *func, ExprList *args, SourcePos p,
-                     bool isLaunch = false, 
+                     bool isLaunch = false,
                      Expr *launchCountExpr[3] = NULL);
 
     static inline bool classof(FunctionCallExpr const*) { return true; }
     static inline bool classof(ASTNode const* N) {
         return N->getValueID() == FunctionCallExprID;
     }
- 
+
     llvm::Value *GetValue(FunctionEmitContext *ctx) const;
     llvm::Value *GetLValue(FunctionEmitContext *ctx) const;
     const Type *GetType() const;
@@ -318,7 +318,7 @@ public:
     static inline bool classof(ASTNode const* N) {
         return N->getValueID() == IndexExprID;
     }
- 
+
     llvm::Value *GetValue(FunctionEmitContext *ctx) const;
     llvm::Value *GetLValue(FunctionEmitContext *ctx) const;
     const Type *GetType() const;
@@ -353,7 +353,7 @@ public:
         return ((N->getValueID() == StructMemberExprID) ||
                 (N->getValueID() == VectorMemberExprID));
     }
- 
+
     llvm::Value *GetValue(FunctionEmitContext *ctx) const;
     llvm::Value *GetLValue(FunctionEmitContext *ctx) const;
     const Type *GetType() const;
@@ -456,7 +456,7 @@ public:
     static inline bool classof(ASTNode const* N) {
         return N->getValueID() == ConstExprID;
     }
- 
+
     llvm::Value *GetValue(FunctionEmitContext *ctx) const;
     const Type *GetType() const;
     void Print() const;
@@ -518,7 +518,7 @@ public:
     static inline bool classof(ASTNode const* N) {
         return N->getValueID() == TypeCastExprID;
     }
- 
+
     llvm::Value *GetValue(FunctionEmitContext *ctx) const;
     llvm::Value *GetLValue(FunctionEmitContext *ctx) const;
     const Type *GetType() const;
@@ -545,7 +545,7 @@ public:
     static inline bool classof(ASTNode const* N) {
         return N->getValueID() == ReferenceExprID;
     }
- 
+
     llvm::Value *GetValue(FunctionEmitContext *ctx) const;
     const Type *GetType() const;
     const Type *GetLValueType() const;
@@ -571,7 +571,7 @@ public:
                 (N->getValueID() == PtrDerefExprID) ||
                 (N->getValueID() == RefDerefExprID));
     }
- 
+
     llvm::Value *GetValue(FunctionEmitContext *ctx) const;
     llvm::Value *GetLValue(FunctionEmitContext *ctx) const;
     const Type *GetLValueType() const;
@@ -592,7 +592,7 @@ public:
     static inline bool classof(ASTNode const* N) {
         return N->getValueID() == PtrDerefExprID;
     }
- 
+
     const Type *GetType() const;
     void Print() const;
     Expr *TypeCheck();
@@ -610,7 +610,7 @@ public:
     static inline bool classof(ASTNode const* N) {
         return N->getValueID() == RefDerefExprID;
     }
- 
+
     const Type *GetType() const;
     void Print() const;
     Expr *TypeCheck();
@@ -653,7 +653,7 @@ public:
     static inline bool classof(ASTNode const* N) {
         return N->getValueID() == SizeOfExprID;
     }
- 
+
     llvm::Value *GetValue(FunctionEmitContext *ctx) const;
     const Type *GetType() const;
     void Print() const;
@@ -677,7 +677,7 @@ public:
     static inline bool classof(ASTNode const* N) {
         return N->getValueID() == SymbolExprID;
     }
- 
+
     llvm::Value *GetValue(FunctionEmitContext *ctx) const;
     llvm::Value *GetLValue(FunctionEmitContext *ctx) const;
     const Type *GetType() const;
@@ -705,7 +705,7 @@ public:
     static inline bool classof(ASTNode const* N) {
         return N->getValueID() == FunctionSymbolExprID;
     }
- 
+
     llvm::Value *GetValue(FunctionEmitContext *ctx) const;
     const Type *GetType() const;
     Symbol *GetBaseSymbol() const;
@@ -766,7 +766,7 @@ public:
     static inline bool classof(ASTNode const* N) {
         return N->getValueID() == SyncExprID;
     }
- 
+
     llvm::Value *GetValue(FunctionEmitContext *ctx) const;
     const Type *GetType() const;
     Expr *TypeCheck();
@@ -785,7 +785,7 @@ public:
     static inline bool classof(ASTNode const* N) {
         return N->getValueID() == NullPointerExprID;
     }
- 
+
     llvm::Value *GetValue(FunctionEmitContext *ctx) const;
     const Type *GetType() const;
     Expr *TypeCheck();
