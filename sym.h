@@ -219,7 +219,7 @@ public:
         @return Pointer to the Type, if found; otherwise NULL is returned.
     */
     const Type *LookupType(const char *name) const;
-    
+
     /** Look for a type given a pointer.
 
         @return True if found, False otherwise.
