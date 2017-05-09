@@ -471,7 +471,7 @@ Target::Target(const char *arch, const char *cpu, const char *isa, bool pic, boo
     m_is32Bit(true),
     m_cpu(""),
     m_attributes(""),
-#if ISPC_LLVM_VERSION >= ISPC_LLVM_3_3 
+#if ISPC_LLVM_VERSION >= ISPC_LLVM_3_3
     m_tf_attributes(NULL),
 #endif
     m_nativeVectorWidth(-1),
@@ -733,7 +733,7 @@ Target::Target(const char *arch, const char *cpu, const char *isa, bool pic, boo
     else if (!strcasecmp(isa, "generic-16") ||
              !strcasecmp(isa, "generic-x16") ||
              // We treat *-generic-16 as generic-16, but with special name mangling
-             strstr(isa, "-generic-16") || 
+             strstr(isa, "-generic-16") ||
              strstr(isa, "-generic-x16")) {
         this->m_isa = Target::GENERIC;
         if (strstr(isa, "-generic-16") ||
