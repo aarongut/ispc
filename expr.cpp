@@ -4674,6 +4674,23 @@ IndexExpr::TypeCheck() {
     return this;
 }
 
+Expr *
+IndexExpr::ReplacePolyType(const PolyType *from, const Type *to) {
+    if (index == NULL || baseExpr == NULL)
+        return NULL;
+
+    if (Type::EqualIgnoringConst(this->GetType()->GetBaseType(), from)) {
+        type = PolyType::ReplaceType(type, to);
+    }
+
+    if (Type::EqualIgnoringConst(this->GetLValueType()->GetBaseType(), from)) {
+        lvalueType = new PointerType(to, lvalueType->GetVariability(),
+                                     lvalueType->IsConstType());
+    }
+
+    return this;
+}
+
 
 int
 IndexExpr::EstimateCost() const {
@@ -5315,6 +5332,23 @@ Expr *
 MemberExpr::Optimize() {
     return expr ? this : NULL;
 }
+
+Expr *
+MemberExpr::ReplacePolyType(const PolyType *from, const Type *to) {
+    if (expr == NULL)
+        return NULL;
+
+    if (Type::EqualIgnoringConst(this->GetType()->GetBaseType(), from)) {
+        type = PolyType::ReplaceType(type, to);
+    }
+
+    if (Type::EqualIgnoringConst(this->GetLValueType()->GetBaseType(), from)) {
+        lvalueType =  PolyType::ReplaceType(lvalueType, lvalueType);
+    }
+
+    return this;
+}
+
 
 
 int
@@ -7118,6 +7152,9 @@ TypeCastExpr::GetValue(FunctionEmitContext *ctx) const {
     else {
         const AtomicType *toAtomic = CastType<AtomicType>(toType);
         // typechecking should ensure this is the case
+        if (!toAtomic) {
+            fprintf(stderr, "I want %s to be atomic\n", toType->GetString().c_str());
+        }
         AssertPos(pos, toAtomic != NULL);
 
         return lTypeConvAtomic(ctx, exprVal, toAtomic, fromAtomic, pos);
@@ -7344,6 +7381,18 @@ TypeCastExpr::Optimize() {
     default:
         FATAL("unimplemented");
     }
+    return this;
+}
+
+Expr *
+TypeCastExpr::ReplacePolyType(const PolyType *from, const Type *to) {
+    if (expr == NULL)
+        return NULL;
+
+    if (Type::EqualIgnoringConst(type->GetBaseType(), from)) {
+        type = PolyType::ReplaceType(type, to);
+    }
+
     return this;
 }
 
@@ -8015,6 +8064,18 @@ SymbolExpr::Optimize() {
     }
     else
         return this;
+}
+
+Expr *
+SymbolExpr::ReplacePolyType(const PolyType *from, const Type *to) {
+    if (!symbol)
+        return NULL;
+
+    if (Type::EqualIgnoringConst(symbol->type->GetBaseType(), from)) {
+        symbol->type = PolyType::ReplaceType(symbol->type, to);
+    }
+
+    return this;
 }
 
 
@@ -8812,6 +8873,18 @@ NewExpr::TypeCheck() {
 
 Expr *
 NewExpr::Optimize() {
+    return this;
+}
+
+Expr *
+NewExpr::ReplacePolyType(const PolyType *from, const Type *to) {
+    if (!allocType)
+        return this;
+
+    if (Type::EqualIgnoringConst(allocType->GetBaseType(), from)) {
+        allocType = PolyType::ReplaceType(allocType, to);
+    }
+
     return this;
 }
 

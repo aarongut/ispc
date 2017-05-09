@@ -413,6 +413,8 @@ public:
 
     const PolyRestriction restriction;
 
+    static const Type * ReplaceType(const Type *from, const Type *to);
+
 
     static const PolyType *UniformInteger, *VaryingInteger;
     static const PolyType *UniformFloating, *VaryingFloating;

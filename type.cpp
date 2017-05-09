@@ -694,6 +694,28 @@ const PolyType *PolyType::UniformNumber =
 const PolyType *PolyType::VaryingNumber =
     new PolyType(PolyType::TYPE_NUMBER, Variability::Varying, false);
 
+const Type *
+PolyType::ReplaceType(const Type *from, const Type *to) {
+    const Type *t = to;
+
+    if (from->IsPointerType()) {
+        t = new PointerType(to,
+                            from->GetVariability(),
+                            from->IsConstType());
+    } else if (from->IsArrayType()) {
+        t = new ArrayType(to,
+                          CastType<ArrayType>(from)->GetElementCount());
+    } else if (from->IsReferenceType()) {
+        t = new ReferenceType(to);
+    }
+
+    fprintf(stderr, "Replacing type \"%s\" with \"%s\"\n",
+            from->GetString().c_str(),
+            t->GetString().c_str());
+
+    return t;
+}
+
 PolyType::PolyType(PolyRestriction r, Variability v, bool ic)
     : Type(POLY_TYPE), restriction(r), variability(v), isConst(ic), quant(-1) {
     asOtherConstType = NULL;
@@ -816,7 +838,7 @@ PolyType::GetAsUniformType() const {
     return asUniformType;
 }
 
-const std::vector<AtomicType *>::iterator 
+const std::vector<AtomicType *>::iterator
 PolyType::ExpandBegin() const {
     if (expandedTypes)
         return expandedTypes->begin();
@@ -841,7 +863,7 @@ PolyType::ExpandBegin() const {
     return expandedTypes->begin();
 }
 
-const std::vector<AtomicType *>::iterator 
+const std::vector<AtomicType *>::iterator
 PolyType::ExpandEnd() const {
     Assert(expandedTypes != NULL);
 
@@ -922,7 +944,7 @@ PolyType::GetString() const {
     case TYPE_NUMBER:     ret += "number";      break;
     default: FATAL("Logic error in PolyType::GetString()");
     }
-    
+
     if (quant >= 0) {
         ret += "$";
         ret += std::to_string(quant);
@@ -1619,9 +1641,9 @@ PointerType::GetCDeclaration(const std::string &name) const {
     }
 
     std::string ret = baseType->GetCDeclaration("");
-    
+
     bool baseIsBasicVarying = (IsBasicType(baseType)) && (baseType->IsVaryingType());
-    
+
     if (baseIsBasicVarying) ret += std::string("(");
     ret += std::string(" *");
     if (isConst) ret += " const";
@@ -2463,7 +2485,7 @@ StructType::StructType(const std::string &n, const llvm::SmallVector<const Type 
     }
 }
 
-const std::string 
+const std::string
 StructType::GetCStructName() const {
   // only return mangled name for varying structs for backwards
   // compatibility...
@@ -3523,7 +3545,7 @@ FunctionType::GetCDeclaration(const std::string &fname) const {
             CastType<ArrayType>(pt->GetBaseType()) != NULL) {
             type = new ArrayType(pt->GetBaseType(), 0);
         }
-        
+
         if (paramNames[i] != "")
           ret += type->GetCDeclaration(paramNames[i]);
         else
@@ -3554,11 +3576,11 @@ FunctionType::GetCDeclarationForDispatch(const std::string &fname) const {
             CastType<ArrayType>(pt->GetBaseType()) != NULL) {
             type = new ArrayType(pt->GetBaseType(), 0);
         }
-        
+
         // Change pointers to varying thingies to void *
         if (pt != NULL && pt->GetBaseType()->IsVaryingType()) {
           PointerType *t = PointerType::Void;
-          
+
           if (paramNames[i] != "")
             ret += t->GetCDeclaration(paramNames[i]);
           else
@@ -3690,10 +3712,10 @@ FunctionType::LLVMFunctionType(llvm::LLVMContext *ctx, bool removeMask) const {
         llvmArgTypes.push_back(LLVMTypes::MaskType);
 
     std::vector<llvm::Type *> callTypes;
-    if (isTask 
+    if (isTask
 #ifdef ISPC_NVPTX_ENABLED
       && (g->target->getISA() != Target::NVPTX)
-#endif 
+#endif
       ){
         // Tasks take three arguments: a pointer to a struct that holds the
         // actual task arguments, the thread index, and the total number of

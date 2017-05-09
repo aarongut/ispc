@@ -328,6 +328,7 @@ public:
 
     Expr *Optimize();
     Expr *TypeCheck();
+    Expr *ReplacePolyType(const PolyType *from, const Type *to);
     int EstimateCost() const;
 
     Expr *baseExpr, *index;
@@ -361,6 +362,7 @@ public:
     void Print() const;
     Expr *Optimize();
     Expr *TypeCheck();
+    Expr *ReplacePolyType(const PolyType *from, const Type *to);
     int EstimateCost() const;
 
     virtual int getElementNumber() const = 0;
@@ -526,6 +528,7 @@ public:
     void Print() const;
     Expr *TypeCheck();
     Expr *Optimize();
+    Expr *ReplacePolyType(const PolyType *from, const Type *to);
     int EstimateCost() const;
     Symbol *GetBaseSymbol() const;
     llvm::Constant *GetConstant(const Type *type) const;
@@ -685,6 +688,7 @@ public:
     Symbol *GetBaseSymbol() const;
     Expr *TypeCheck();
     Expr *Optimize();
+    Expr *ReplacePolyType(const PolyType *from, const Type *to);
     void Print() const;
     int EstimateCost() const;
 
@@ -813,6 +817,7 @@ public:
     const Type *GetType() const;
     Expr *TypeCheck();
     Expr *Optimize();
+    Expr *ReplacePolyType(const PolyType *from, const Type *to);
     void Print() const;
     int EstimateCost() const;
 
