@@ -118,6 +118,7 @@ public:
 
     Stmt *Optimize();
     Stmt *TypeCheck();
+    Stmt *ReplacePolyType(const PolyType *from, const Type *to);
     int EstimateCost() const;
 
     std::vector<VariableDeclaration> vars;
@@ -282,6 +283,7 @@ public:
     void Print(int indent) const;
 
     Stmt *TypeCheck();
+    Stmt *ReplacePolyType(const PolyType *from, const Type *to);
     int EstimateCost() const;
 
     std::vector<Symbol *> dimVariables;

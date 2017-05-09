@@ -499,6 +499,18 @@ DeclStmt::TypeCheck() {
     return encounteredError ? NULL : this;
 }
 
+Stmt *
+DeclStmt::ReplacePolyType(const PolyType *from, const Type *to) {
+    for (size_t i = 0; i < vars.size(); i++) {
+        Symbol *s = vars[i].sym;
+        if (Type::EqualIgnoringConst(s->type->GetBaseType(), from)) {
+            s->type = PolyType::ReplaceType(s->type, to);
+        }
+    }
+
+    return this;
+}
+
 
 void
 DeclStmt::Print(int indent) const {
@@ -2177,6 +2189,21 @@ ForeachStmt::TypeCheck() {
     }
 
     return anyErrors ? NULL : this;
+}
+
+Stmt *
+ForeachStmt::ReplacePolyType(const PolyType *from, const Type *to) {
+    if (!stmts)
+        return NULL;
+
+    for (size_t i=0; i<dimVariables.size(); i++) {
+        const Type *t = dimVariables[i]->type;
+        if (Type::EqualIgnoringConst(t->GetBaseType(), from)) {
+            t = PolyType::ReplaceType(t, to);
+        }
+    }
+
+    return this;
 }
 
 
