@@ -58,16 +58,18 @@ ASTNode::~ASTNode() {
 // AST
 
 void
-AST::AddFunction(Symbol *sym, Stmt *code) {
+AST::AddFunction(Symbol *sym, Stmt *code, SymbolTable *symbolTable) {
     if (sym == NULL)
         return;
 
     Function *f = new Function(sym, code);
 
     if (f->IsPolyFunction()) {
-        std::vector<Function *> *expanded = f->ExpandPolyArguments();
-        for (size_t i=0; i<expanded->size(); i++)
+        std::vector<Function *> *expanded = f->ExpandPolyArguments(symbolTable);
+        for (size_t i=0; i<expanded->size(); i++) {
             functions.push_back((*expanded)[i]);
+        }
+        delete expanded;
     } else {
         functions.push_back(f);
     }
@@ -540,5 +542,5 @@ TranslatePoly(ASTNode *root, const PolyType *polyType, const Type *replacement) 
     data.polyType = polyType;
     data.replacement = replacement;
 
-    return WalkAST(root, NULL, lTranslatePolyNode, &replacement);
+    return WalkAST(root, NULL, lTranslatePolyNode, &data);
 }

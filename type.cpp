@@ -709,11 +709,39 @@ PolyType::ReplaceType(const Type *from, const Type *to) {
         t = new ReferenceType(to);
     }
 
+    if (from->IsVaryingType())
+        t = t->GetAsVaryingType();
+
     fprintf(stderr, "Replacing type \"%s\" with \"%s\"\n",
             from->GetString().c_str(),
             t->GetString().c_str());
 
     return t;
+}
+
+bool
+PolyType::Less(const Type *a, const Type *b) {
+    const PolyType *pa = CastType<PolyType>(a->GetBaseType());
+    const PolyType *pb = CastType<PolyType>(b->GetBaseType());
+
+    if (!pa || !pb) {
+        char buf[1024];
+        snprintf(buf, 1024, "Calling lPolyTypeLess on non-polymorphic types"
+               "\"%s\" and \"%s\"\n",
+                a->GetString().c_str(), b->GetString().c_str());
+        FATAL(buf);
+    }
+
+
+    if (pa->restriction < pb->restriction)
+        return true;
+    if (pa->restriction > pb->restriction)
+        return false;
+
+    if (pa->GetQuant() < pb->GetQuant())
+        return true;
+
+    return false;
 }
 
 PolyType::PolyType(PolyRestriction r, Variability v, bool ic)
@@ -4136,4 +4164,17 @@ Type::Equal(const Type *a, const Type *b) {
 bool
 Type::EqualIgnoringConst(const Type *a, const Type *b) {
     return lCheckTypeEquality(a, b, true);
+}
+
+bool
+Type::EqualForReplacement(const Type *a, const Type *b) {
+    const PolyType *pa = CastType<PolyType>(a);
+    const PolyType *pb = CastType<PolyType>(b);
+
+
+    if (!pa || !pb)
+        return false;
+
+    return pa->restriction == pb->restriction &&
+           pa->GetQuant() == pb->GetQuant();
 }

@@ -108,6 +108,7 @@ public:
 };
 
 
+
 /** @brief Symbol table that holds all known symbols during parsing and compilation.
 
     A single instance of a SymbolTable is stored in the Module class
@@ -159,6 +160,14 @@ public:
         already present in the symbol table. */
     bool AddFunction(Symbol *symbol);
 
+    /** Adds the given function to the list of polymorphic definitions for the
+        given name
+        @param name The name of the original function
+        @param type The expanded FunctionType */
+
+    void MapPolyFunction(std::string name, std::string polyname,
+                         const FunctionType *type);
+
     /** Looks for the function or functions with the given name in the
         symbol name.  If a function has been overloaded and multiple
         definitions are present for a given function name, all of them will
@@ -173,6 +182,8 @@ public:
 
         @return pointer to matching Symbol; NULL if none is found. */
     Symbol *LookupFunction(const char *name, const FunctionType *type);
+
+    std::vector<Symbol *>& LookupPolyFunction(const char *name);
 
     /** Returns all of the functions in the symbol table that match the given
         predicate.
@@ -275,6 +286,8 @@ private:
         have multiple function symbols associated with it. */
     typedef std::map<std::string, std::vector<Symbol *> > FunctionMapType;
     FunctionMapType functions;
+
+    FunctionMapType polyFunctions;
 
     /** Type definitions can't currently be scoped.
      */

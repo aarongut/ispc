@@ -640,87 +640,45 @@ Function::IsPolyFunction() const {
     return false;
 }
 
-static bool
-lPolyTypeLess(const Type *a, const Type *b) {
-    const PolyType *pa = CastType<PolyType>(a->GetBaseType());
-    const PolyType *pb = CastType<PolyType>(b->GetBaseType());
-
-    if (!pa || !pb) {
-        char buf[1024];
-        snprintf(buf, 1024, "Calling lPolyTypeLess on non-polymorphic types"
-               "\"%s\" and \"%s\"\n",
-                a->GetString().c_str(), b->GetString().c_str());
-        FATAL(buf);
-    }
-
-
-    if (pa->restriction < pb->restriction)
-        return true;
-    if (pa->restriction > pb->restriction)
-        return false;
-
-    if (pa->GetQuant() < pb->GetQuant())
-        return true;
-
-    return false;
-}
 
 std::vector<Function *> *
-Function::ExpandPolyArguments() const {
-    std::set<const Type *, bool(*)(const Type *, const Type *)> toExpand(&lPolyTypeLess);
+Function::ExpandPolyArguments(SymbolTable *symbolTable) const {
+    Assert(symbolTable != NULL);
+
     std::vector<Function *> *expanded = new std::vector<Function *>();
 
-    for (size_t i = 0; i < args.size(); i++) {
-        if (args[i]->type->IsPolymorphicType() &&
-            !toExpand.count(args[i]->type)) {
-            toExpand.insert(args[i]->type);
-        }
-    }
+    std::vector<Symbol *> versions = symbolTable->LookupPolyFunction(sym->name.c_str());
 
-    std::set<const Type *>::iterator te;
-    for (te = toExpand.begin(); te != toExpand.end(); te++) {
-        const PolyType *pt = CastType<PolyType>((*te)->GetBaseType());
+    const FunctionType *func = CastType<FunctionType>(sym->type);
 
-        std::vector<AtomicType *>::iterator expand;
-        expand = pt->ExpandBegin();
-        for (; expand != pt->ExpandEnd(); expand++) {
-            const Type *replacement = *expand;
-            Stmt *code_r = code->ReplacePolyType(pt, replacement);
+    printf("%s before replacing anything:\n", sym->name.c_str());
+    code->Print(0);
 
-            const FunctionType *ft = CastType<FunctionType>(sym->type);
-            llvm::SmallVector<const Type *, 8> nargs;
-            llvm::SmallVector<std::string, 8> nargsn;
-            llvm::SmallVector<Expr *, 8> nargsd;
-            llvm::SmallVector<SourcePos, 8> nargsp;
-            for (size_t i = 0; i < args.size(); i++) {
-                if (Type::EqualIgnoringConst(args[i]->type->GetBaseType(), pt)) {
-                        nargs.push_back(PolyType::ReplaceType(args[i]->type, replacement));
-                } else {
-                    nargs.push_back(args[i]->type);
-                }
-                nargsn.push_back(ft->GetParameterName(i));
-                nargsd.push_back(ft->GetParameterDefault(i));
-                nargsp.push_back(ft->GetParameterSourcePos(i));
+    for (size_t i=0; i<versions.size(); i++) {
+        const FunctionType *ft = CastType<FunctionType>(versions[i]->type);
+        Stmt *ncode = code;
+
+        for (int j=0; j<ft->GetNumParameters(); j++) {
+            if (func->GetParameterType(j)->IsPolymorphicType()) {
+                const PolyType *from = CastType<PolyType>(
+                        func->GetParameterType(j)->GetBaseType());
+
+                ncode = (Stmt*)TranslatePoly(ncode, from,
+                        ft->GetParameterType(j)->GetBaseType());
+                printf("%s after replacing %s with %s:\n\n",
+                        sym->name.c_str(), from->GetString().c_str(),
+                        ft->GetParameterType(j)->GetBaseType()->GetString().c_str());
+
+                ncode->Print(0);
+
+                printf("------------------------------------------\n\n");
             }
-
-
-            Symbol *nsym = new Symbol(sym->name, sym->pos,
-                                      new FunctionType(ft->GetReturnType(),
-                                                       nargs,
-                                                       nargsn,
-                                                       nargsd,
-                                                       nargsp,
-                                                       ft->isTask,
-                                                       ft->isExported,
-                                                       ft->isExternC,
-                                                       ft->isUnmasked));
-            nsym->function = sym->function;
-            nsym->exportedFunction = sym->exportedFunction;
-
-            expanded->push_back(new Function(nsym, code_r));
-
-            replacement = PolyType::ReplaceType(*te, replacement);
         }
+
+        Symbol *s = symbolTable->LookupFunction(versions[i]->name.c_str(), ft);
+
+        expanded->push_back(new Function(s, ncode));
     }
+
     return expanded;
 }

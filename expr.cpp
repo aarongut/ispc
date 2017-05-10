@@ -4679,11 +4679,11 @@ IndexExpr::ReplacePolyType(const PolyType *from, const Type *to) {
     if (index == NULL || baseExpr == NULL)
         return NULL;
 
-    if (Type::EqualIgnoringConst(this->GetType()->GetBaseType(), from)) {
+    if (Type::EqualForReplacement(this->GetType()->GetBaseType(), from)) {
         type = PolyType::ReplaceType(type, to);
     }
 
-    if (Type::EqualIgnoringConst(this->GetLValueType()->GetBaseType(), from)) {
+    if (Type::EqualForReplacement(this->GetLValueType()->GetBaseType(), from)) {
         lvalueType = new PointerType(to, lvalueType->GetVariability(),
                                      lvalueType->IsConstType());
     }
@@ -5338,11 +5338,11 @@ MemberExpr::ReplacePolyType(const PolyType *from, const Type *to) {
     if (expr == NULL)
         return NULL;
 
-    if (Type::EqualIgnoringConst(this->GetType()->GetBaseType(), from)) {
+    if (Type::EqualForReplacement(this->GetType()->GetBaseType(), from)) {
         type = PolyType::ReplaceType(type, to);
     }
 
-    if (Type::EqualIgnoringConst(this->GetLValueType()->GetBaseType(), from)) {
+    if (Type::EqualForReplacement(this->GetLValueType()->GetBaseType(), from)) {
         lvalueType =  PolyType::ReplaceType(lvalueType, lvalueType);
     }
 
@@ -7386,10 +7386,10 @@ TypeCastExpr::Optimize() {
 
 Expr *
 TypeCastExpr::ReplacePolyType(const PolyType *from, const Type *to) {
-    if (expr == NULL)
+    if (type == NULL)
         return NULL;
 
-    if (Type::EqualIgnoringConst(type->GetBaseType(), from)) {
+    if (Type::EqualForReplacement(type->GetBaseType(), from)) {
         type = PolyType::ReplaceType(type, to);
     }
 
@@ -8071,7 +8071,7 @@ SymbolExpr::ReplacePolyType(const PolyType *from, const Type *to) {
     if (!symbol)
         return NULL;
 
-    if (Type::EqualIgnoringConst(symbol->type->GetBaseType(), from)) {
+    if (Type::EqualForReplacement(symbol->type->GetBaseType(), from)) {
         symbol->type = PolyType::ReplaceType(symbol->type, to);
     }
 
@@ -8881,7 +8881,7 @@ NewExpr::ReplacePolyType(const PolyType *from, const Type *to) {
     if (!allocType)
         return this;
 
-    if (Type::EqualIgnoringConst(allocType->GetBaseType(), from)) {
+    if (Type::EqualForReplacement(allocType->GetBaseType(), from)) {
         allocType = PolyType::ReplaceType(allocType, to);
     }
 

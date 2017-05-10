@@ -39,6 +39,7 @@
 #define ISPC_FUNC_H 1
 
 #include "ispc.h"
+#include "sym.h"
 #include <vector>
 
 class Function {
@@ -54,7 +55,7 @@ public:
     /** Checks if the function has polymorphic parameters */
     const bool IsPolyFunction() const;
 
-    std::vector<Function *> *ExpandPolyArguments() const;
+    std::vector<Function *> *ExpandPolyArguments(SymbolTable *symbolTable) const;
 
 private:
     void emitCode(FunctionEmitContext *ctx, llvm::Function *function,

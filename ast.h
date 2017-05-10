@@ -148,7 +148,7 @@ class AST {
 public:
     /** Add the AST for a function described by the given declaration
         information and source code. */
-    void AddFunction(Symbol *sym, Stmt *code);
+    void AddFunction(Symbol *sym, Stmt *code, SymbolTable *symbolTable=NULL);
 
     /** Generate LLVM IR for all of the functions into the current
         module. */
@@ -206,6 +206,8 @@ extern Stmt *TypeCheck(Stmt *);
 /** Returns an estimate of the execution cost of the tree starting at
     the given root. */
 extern int EstimateCost(ASTNode *root);
+
+extern ASTNode * TranslatePoly(ASTNode *root, const PolyType *polyType, const Type *replacement);
 
 /** Returns true if it would be safe to run the given code with an "all
     off" mask. */

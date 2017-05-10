@@ -244,6 +244,8 @@ public:
         the same (ignoring const-ness of the type), false otherwise. */
     static bool EqualIgnoringConst(const Type *a, const Type *b);
 
+    static bool EqualForReplacement(const Type *a, const Type *b);
+
     /** Given two types, returns the least general Type that is more general
         than both of them.  (i.e. that can represent their values without
         any loss of data.)  If there is no such Type, return NULL.
@@ -414,6 +416,8 @@ public:
     const PolyRestriction restriction;
 
     static const Type * ReplaceType(const Type *from, const Type *to);
+
+    static bool Less(const Type *a, const Type *b);
 
 
     static const PolyType *UniformInteger, *VaryingInteger;

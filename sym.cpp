@@ -157,6 +157,14 @@ SymbolTable::AddFunction(Symbol *symbol) {
     return true;
 }
 
+void
+SymbolTable::MapPolyFunction(std::string name, std::string polyname,
+                             const FunctionType *type) {
+    std::vector<Symbol *> &polyExpansions = polyFunctions[name];
+    SourcePos p;
+    polyExpansions.push_back(new Symbol(polyname, p, type, SC_NONE));
+}
+
 
 bool
 SymbolTable::LookupFunction(const char *name, std::vector<Symbol *> *matches) {
@@ -184,7 +192,18 @@ SymbolTable::LookupFunction(const char *name, const FunctionType *type) {
                 return funcs[j];
         }
     }
+    // Try looking for a polymorphic function
+    if (polyFunctions[name].size() > 0) {
+        std::string n = name;
+        return new Symbol(name, polyFunctions[name][0]->pos, type);
+    }
+
     return NULL;
+}
+
+std::vector<Symbol *>&
+SymbolTable::LookupPolyFunction(const char *name) {
+    return polyFunctions[name];
 }
 
 

@@ -915,8 +915,6 @@ Module::AddFunctionDeclaration(const std::string &name,
                                SourcePos pos) {
     Assert(functionType != NULL);
 
-    fprintf(stderr, "Adding %s\n", name.c_str());
-
     // If a global variable with the same name has already been declared
     // issue an error.
     if (symbolTable->LookupVariable(name.c_str()) != NULL) {
@@ -1020,26 +1018,26 @@ Module::AddFunctionDeclaration(const std::string &name,
      * these functions will be overloaded if they are not exported, or mangled
      * if exported */
 
-    std::vector<int> toExpand;
+    std::set<const Type *, bool(*)(const Type*, const Type*)> toExpand(&PolyType::Less);
     std::vector<const FunctionType *> expanded;
     expanded.push_back(functionType);
 
     for (int i=0; i<functionType->GetNumParameters(); i++) {
-        if (functionType->GetParameterType(i)->IsPolymorphicType()) {
-            fprintf(stderr, "Expanding polymorphic function \"%s\"\n",
-                    name.c_str());
+        const Type *param = functionType->GetParameterType(i);
+        if (param->IsPolymorphicType() &&
+                !toExpand.count(param->GetBaseType())) {
 
-            toExpand.push_back(i);
+            toExpand.insert(param->GetBaseType());
         }
     }
 
     std::vector<const FunctionType *> nextExpanded;
-    for (size_t i=0; i<toExpand.size(); i++) {
+    std::set<const Type*>::iterator iter;
+    for (iter = toExpand.begin(); iter != toExpand.end(); iter++) {
         for (size_t j=0; j<expanded.size(); j++) {
             const FunctionType *eft = expanded[j];
 
-            const PolyType *pt=CastType<PolyType>(
-                    eft->GetParameterType(toExpand[i])->GetBaseType());
+            const PolyType *pt=CastType<PolyType>(*iter);
 
             std::vector<AtomicType *>::iterator te;
             for (te = pt->ExpandBegin(); te != pt->ExpandEnd(); te++) {
@@ -1048,9 +1046,10 @@ Module::AddFunctionDeclaration(const std::string &name,
                 llvm::SmallVector<Expr *, 8> nargsd;
                 llvm::SmallVector<SourcePos, 8> nargsp;
                 for (size_t k=0; k<eft->GetNumParameters(); k++) {
-                    if (k == toExpand[i]) {
+                    if (Type::Equal(eft->GetParameterType(k)->GetBaseType(),
+                                    pt)) {
                         const Type *r;
-                        r = PolyType::ReplaceType(eft->GetParameterType(j),*te);
+                        r = PolyType::ReplaceType(eft->GetParameterType(k),*te);
                         nargs.push_back(r);
                     } else {
                         nargs.push_back(eft->GetParameterType(k));
@@ -1087,8 +1086,8 @@ Module::AddFunctionDeclaration(const std::string &name,
                 }
             }
 
-            fprintf(stderr, "Adding expanded function %s\n", nname.c_str());
 
+            symbolTable->MapPolyFunction(name, nname, expanded[i]);
             AddFunctionDeclaration(nname, expanded[i], storageClass,
                                         isInline, pos);
         }
@@ -1263,14 +1262,7 @@ Module::AddFunctionDefinition(const std::string &name, const FunctionType *type,
 
     sym->pos = code->pos;
 
-    // FIXME: because we encode the parameter names in the function type,
-    // we need to override the function type here in case the function had
-    // earlier been declared with anonymous parameter names but is now
-    // defined with actual names.  This is yet another reason we shouldn't
-    // include the names in FunctionType...
-    sym->type = type;
-
-    ast->AddFunction(sym, code);
+    ast->AddFunction(sym, code, symbolTable);
 }
 
 
