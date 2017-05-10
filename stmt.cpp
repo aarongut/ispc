@@ -79,7 +79,70 @@ Stmt::Optimize() {
 
 Stmt *
 Stmt::ReplacePolyType(const PolyType *polyType, const Type *replacement) {
-    return this;
+    Stmt *copy;
+    switch (getValueID()) {
+        case AssertStmtID:
+            copy = (Stmt*)new AssertStmt(*(AssertStmt*)this);
+            break;
+        case BreakStmtID:
+            copy = (Stmt*)new BreakStmt(*(BreakStmt*)this);
+            break;
+        case CaseStmtID:
+            copy = (Stmt*)new CaseStmt(*(CaseStmt*)this);
+            break;
+        case ContinueStmtID:
+            copy = (Stmt*)new ContinueStmt(*(ContinueStmt*)this);
+            break;
+        case DefaultStmtID:
+            copy = (Stmt*)new DefaultStmt(*(DefaultStmt*)this);
+            break;
+        case DeleteStmtID:
+            copy = (Stmt*)new DeleteStmt(*(DeleteStmt*)this);
+            break;
+        case DoStmtID:
+            copy = (Stmt*)new DoStmt(*(DoStmt*)this);
+            break;
+        case ExprStmtID:
+            copy = (Stmt*)new ExprStmt(*(ExprStmt*)this);
+            break;
+        case ForeachActiveStmtID:
+            copy = (Stmt*)new ForeachActiveStmt(*(ForeachActiveStmt*)this);
+            break;
+        case ForeachUniqueStmtID:
+            copy = (Stmt*)new ForeachUniqueStmt(*(ForeachUniqueStmt*)this);
+            break;
+        case ForStmtID:
+            copy = (Stmt*)new ForStmt(*(ForStmt*)this);
+            break;
+        case GotoStmtID:
+            copy = (Stmt*)new GotoStmt(*(GotoStmt*)this);
+            break;
+        case IfStmtID:
+            copy = (Stmt*)new IfStmt(*(IfStmt*)this);
+            break;
+        case LabeledStmtID:
+            copy = (Stmt*)new LabeledStmt(*(LabeledStmt*)this);
+            break;
+        case PrintStmtID:
+            copy = (Stmt*)new PrintStmt(*(PrintStmt*)this);
+            break;
+        case ReturnStmtID:
+            copy = (Stmt*)new ReturnStmt(*(ReturnStmt*)this);
+            break;
+        case StmtListID:
+            copy = (Stmt*)new StmtList(*(StmtList*)this);
+            break;
+        case SwitchStmtID:
+            copy = (Stmt*)new SwitchStmt(*(SwitchStmt*)this);
+            break;
+        case UnmaskedStmtID:
+            copy = (Stmt*)new UnmaskedStmt(*(UnmaskedStmt*)this);
+            break;
+        default:
+            FATAL("Unmatched case in ReplacePolyType (stmt)");
+            copy = this; // just to silence the compiler
+    }
+    return copy;
 }
 
 
@@ -132,6 +195,11 @@ ExprStmt::EstimateCost() const {
 
 DeclStmt::DeclStmt(const std::vector<VariableDeclaration> &v, SourcePos p)
     : Stmt(p, DeclStmtID), vars(v) {
+}
+
+DeclStmt::DeclStmt(DeclStmt *base)
+    : Stmt(base->pos, DeclStmtID) {
+    vars = base->vars;
 }
 
 
@@ -501,14 +569,16 @@ DeclStmt::TypeCheck() {
 
 Stmt *
 DeclStmt::ReplacePolyType(const PolyType *from, const Type *to) {
+    DeclStmt *copy = new DeclStmt(this);
+
     for (size_t i = 0; i < vars.size(); i++) {
-        Symbol *s = vars[i].sym;
+        Symbol *s = copy->vars[i].sym;
         if (Type::EqualForReplacement(s->type->GetBaseType(), from)) {
             s->type = PolyType::ReplaceType(s->type, to);
         }
     }
 
-    return this;
+    return copy;
 }
 
 
@@ -1487,6 +1557,15 @@ ForeachStmt::ForeachStmt(const std::vector<Symbol *> &lvs,
       stmts(s) {
 }
 
+ForeachStmt::ForeachStmt(ForeachStmt *base)
+    : Stmt(base->pos, ForeachStmtID) {
+    dimVariables = base->dimVariables;
+    startExprs = base->startExprs;
+    endExprs = base->endExprs;
+    isTiled = base->isTiled;
+    stmts = base->stmts;
+}
+
 
 /* Given a uniform counter value in the memory location pointed to by
    uniformCounterPtr, compute the corresponding set of varying counter
@@ -2196,14 +2275,16 @@ ForeachStmt::ReplacePolyType(const PolyType *from, const Type *to) {
     if (!stmts)
         return NULL;
 
+    ForeachStmt *copy = new ForeachStmt(this);
+
     for (size_t i=0; i<dimVariables.size(); i++) {
-        const Type *t = dimVariables[i]->type;
+        const Type *t = copy->dimVariables[i]->type;
         if (Type::EqualForReplacement(t->GetBaseType(), from)) {
             t = PolyType::ReplaceType(t, to);
         }
     }
 
-    return this;
+    return copy;
 }
 
 

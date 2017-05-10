@@ -334,6 +334,7 @@ public:
     Expr *baseExpr, *index;
 
 private:
+    IndexExpr(IndexExpr *base);
     mutable const Type *type;
     mutable const PointerType *lvalueType;
 };
@@ -535,6 +536,8 @@ public:
 
     const Type *type;
     Expr *expr;
+private:
+    TypeCastExpr(TypeCastExpr *base);
 };
 
 
@@ -693,6 +696,7 @@ public:
     int EstimateCost() const;
 
 private:
+    SymbolExpr(SymbolExpr *base);
     Symbol *symbol;
 };
 
@@ -835,6 +839,8 @@ public:
         instance, or whether a single allocation is performed for the
         entire gang of program instances.) */
     bool isVarying;
+private:
+    NewExpr(NewExpr *base);
 };
 
 

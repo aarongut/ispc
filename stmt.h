@@ -122,6 +122,8 @@ public:
     int EstimateCost() const;
 
     std::vector<VariableDeclaration> vars;
+private:
+    DeclStmt(DeclStmt *base);
 };
 
 
@@ -291,6 +293,8 @@ public:
     std::vector<Expr *> endExprs;
     bool isTiled;
     Stmt *stmts;
+private:
+    ForeachStmt(ForeachStmt *base);
 };
 
 

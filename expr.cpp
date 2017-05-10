@@ -114,7 +114,52 @@ Expr::GetBaseSymbol() const {
 
 Expr *
 Expr::ReplacePolyType(const PolyType *polyType, const Type *replacement) {
-    return this;
+    Expr *copy;
+    switch (getValueID()) {
+        case AddressOfExprID:
+            copy = (Expr*)new AddressOfExpr(*(AddressOfExpr*)this);
+            break;
+        case AssignExprID:
+            copy = (Expr*)new AssignExpr(*(AssignExpr*)this);
+            break;
+        case BinaryExprID:
+            copy = (Expr*)new BinaryExpr(*(BinaryExpr*)this);
+            break;
+        case ConstExprID:
+            copy = (Expr*)new ConstExpr(*(ConstExpr*)this);
+            break;
+        case PtrDerefExprID:
+            copy = (Expr*)new PtrDerefExpr(*(PtrDerefExpr*)this);
+            break;
+        case RefDerefExprID:
+            copy = (Expr*)new RefDerefExpr(*(RefDerefExpr*)this);
+            break;
+        case ExprListID:
+            copy = (Expr*)new ExprList(*(ExprList*)this);
+            break;
+        case FunctionCallExprID:
+            copy = (Expr*)new FunctionCallExpr(*(FunctionCallExpr*)this);
+            break;
+        case NullPointerExprID:
+            copy = (Expr*)new NullPointerExpr(*(NullPointerExpr*)this);
+            break;
+        case ReferenceExprID:
+            copy = (Expr*)new ReferenceExpr(*(ReferenceExpr*)this);
+            break;
+        case SelectExprID:
+            copy = (Expr*)new SelectExpr(*(SelectExpr*)this);
+            break;
+        case SizeOfExprID:
+            copy = (Expr*)new SizeOfExpr(*(SizeOfExpr*)this);
+            break;
+        case UnaryExprID:
+            copy = (Expr*)new UnaryExpr(*(UnaryExpr*)this);
+            break;
+        default:
+            FATAL("Unmatched case in ReplacePolyType (expr)");
+            copy = this; // just to silence the compiler
+    }
+    return copy;
 }
 
 
@@ -4147,6 +4192,14 @@ IndexExpr::IndexExpr(Expr *a, Expr *i, SourcePos p)
     type = lvalueType = NULL;
 }
 
+IndexExpr::IndexExpr(IndexExpr *base)
+    : Expr(base->pos, IndexExprID) {
+    baseExpr = base->baseExpr;
+    index = base->index;
+    type = base->type;
+    lvalueType = base->lvalueType;
+}
+
 
 /** When computing pointer values, we need to apply a per-lane offset when
     we have a varying pointer that is itself indexing into varying data.
@@ -4679,16 +4732,18 @@ IndexExpr::ReplacePolyType(const PolyType *from, const Type *to) {
     if (index == NULL || baseExpr == NULL)
         return NULL;
 
-    if (Type::EqualForReplacement(this->GetType()->GetBaseType(), from)) {
-        type = PolyType::ReplaceType(type, to);
+    IndexExpr *copy = new IndexExpr(this);
+
+    if (Type::EqualForReplacement(copy->GetType()->GetBaseType(), from)) {
+        copy->type = PolyType::ReplaceType(type, to);
     }
 
-    if (Type::EqualForReplacement(this->GetLValueType()->GetBaseType(), from)) {
-        lvalueType = new PointerType(to, lvalueType->GetVariability(),
-                                     lvalueType->IsConstType());
+    if (Type::EqualForReplacement(copy->GetLValueType()->GetBaseType(), from)) {
+        copy->lvalueType = new PointerType(to, copy->lvalueType->GetVariability(),
+                                           copy->lvalueType->IsConstType());
     }
 
-    return this;
+    return copy;
 }
 
 
@@ -5338,15 +5393,15 @@ MemberExpr::ReplacePolyType(const PolyType *from, const Type *to) {
     if (expr == NULL)
         return NULL;
 
-    if (Type::EqualForReplacement(this->GetType()->GetBaseType(), from)) {
-        type = PolyType::ReplaceType(type, to);
+    MemberExpr *copy = getValueID() == StructMemberExprID ?
+        (MemberExpr*) new StructMemberExpr(*(StructMemberExpr*)this) :
+        (MemberExpr*) new VectorMemberExpr(*(VectorMemberExpr*)this);
+
+    if (Type::EqualForReplacement(copy->GetType()->GetBaseType(), from)) {
+        copy->type = PolyType::ReplaceType(copy->type, to);
     }
 
-    if (Type::EqualForReplacement(this->GetLValueType()->GetBaseType(), from)) {
-        lvalueType =  PolyType::ReplaceType(lvalueType, lvalueType);
-    }
-
-    return this;
+    return copy;
 }
 
 
@@ -6290,6 +6345,12 @@ TypeCastExpr::TypeCastExpr(const Type *t, Expr *e, SourcePos p)
   : Expr(p, TypeCastExprID) {
     type = t;
     expr = e;
+}
+
+TypeCastExpr::TypeCastExpr(TypeCastExpr *base)
+    : Expr(base->pos, TypeCastExprID) {
+    type = base->type;
+    expr = base->expr;
 }
 
 
@@ -7389,11 +7450,13 @@ TypeCastExpr::ReplacePolyType(const PolyType *from, const Type *to) {
     if (type == NULL)
         return NULL;
 
-    if (Type::EqualForReplacement(type->GetBaseType(), from)) {
-        type = PolyType::ReplaceType(type, to);
+    TypeCastExpr *copy = new TypeCastExpr(this);
+
+    if (Type::EqualForReplacement(copy->type->GetBaseType(), from)) {
+        copy->type = PolyType::ReplaceType(copy->type, to);
     }
 
-    return this;
+    return copy;
 }
 
 
@@ -8002,6 +8065,11 @@ SymbolExpr::SymbolExpr(Symbol *s, SourcePos p)
     symbol = s;
 }
 
+SymbolExpr::SymbolExpr(SymbolExpr *base)
+    : Expr(base->pos, SymbolExprID) {
+    symbol = base->symbol;
+}
+
 
 llvm::Value *
 SymbolExpr::GetValue(FunctionEmitContext *ctx) const {
@@ -8071,11 +8139,15 @@ SymbolExpr::ReplacePolyType(const PolyType *from, const Type *to) {
     if (!symbol)
         return NULL;
 
+    SymbolExpr *copy = new SymbolExpr(this);
+
+    copy->symbol = new Symbol(*symbol);
+
     if (Type::EqualForReplacement(symbol->type->GetBaseType(), from)) {
-        symbol->type = PolyType::ReplaceType(symbol->type, to);
+        copy->symbol->type = PolyType::ReplaceType(symbol->type, to);
     }
 
-    return this;
+    return copy;
 }
 
 
@@ -8679,6 +8751,14 @@ NewExpr::NewExpr(int typeQual, const Type *t, Expr *init, Expr *count,
         allocType = allocType->ResolveUnboundVariability(Variability::Uniform);
 }
 
+NewExpr::NewExpr(NewExpr *base)
+    : Expr(base->pos, NewExprID) {
+    allocType = base->allocType;
+    initExpr = base->initExpr;
+    countExpr = base->countExpr;
+    isVarying = base->isVarying;
+}
+
 
 llvm::Value *
 NewExpr::GetValue(FunctionEmitContext *ctx) const {
@@ -8881,11 +8961,13 @@ NewExpr::ReplacePolyType(const PolyType *from, const Type *to) {
     if (!allocType)
         return this;
 
+    NewExpr *copy = new NewExpr(this);
+
     if (Type::EqualForReplacement(allocType->GetBaseType(), from)) {
-        allocType = PolyType::ReplaceType(allocType, to);
+        copy->allocType = PolyType::ReplaceType(allocType, to);
     }
 
-    return this;
+    return copy;
 }
 
 
