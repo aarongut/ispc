@@ -195,10 +195,10 @@ public:
         'continue' statement when going through the loop body in the
         previous iteration. */
     void RestoreContinuedLanes();
-    
-    /** This method is called by code emitting IR for a loop.  It clears 
+
+    /** This method is called by code emitting IR for a loop.  It clears
         any lanes that contained a break since the mask has been updated to take
-        them into account.  This is necessary as all the bail out checks for 
+        them into account.  This is necessary as all the bail out checks for
         breaks are meant to only deal with lanes breaking on the current iteration.
      */
     void ClearBreakLanes();
@@ -312,7 +312,7 @@ public:
     llvm::Value* Insert(llvm::Value *vector, llvm::Value *lane, llvm::Value *scalar);
     /** Issues a call to __extract_int8/int16/int32/int64/float/double */
     llvm::Value* Extract(llvm::Value *vector, llvm::Value *lane);
-#endif 
+#endif
 
     /** Given a string, create an anonymous global variable to hold its
         value and return the pointer to the string. */
@@ -481,7 +481,7 @@ public:
         pointer values given by the lvalue.  If the lvalue is not varying,
         then both the mask pointer and the type pointer may be NULL. */
     llvm::Value *LoadInst(llvm::Value *ptr, llvm::Value *mask,
-                          const Type *ptrType, const char *name = NULL, 
+                          const Type *ptrType, const char *name = NULL,
                           bool one_elem = false);
 
     llvm::Value *LoadInst(llvm::Value *ptr, const char *name = NULL);

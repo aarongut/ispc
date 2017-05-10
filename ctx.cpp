@@ -631,7 +631,7 @@ FunctionEmitContext::EndIf() {
                                      breakLanes, "|break_lanes");
         }
 
-        llvm::Value *notBreakOrContinue = 
+        llvm::Value *notBreakOrContinue =
             BinaryOperator(llvm::Instruction::Xor,
                            bcLanes, LLVMMaskAllOn,
                            "!(break|continue)_lanes");
@@ -942,7 +942,7 @@ FunctionEmitContext::jumpIfAllLoopLanesAreDone(llvm::BasicBlock *target) {
             finishedLanes = BinaryOperator(llvm::Instruction::Or, finishedLanes,
                                            continued, "returned|breaked|continued");
         }
-          
+
         finishedLanes = BinaryOperator(llvm::Instruction::And,
                                        finishedLanes, GetFunctionMask(),
                                        "finished&func");
@@ -1446,7 +1446,7 @@ FunctionEmitContext::None(llvm::Value *mask) {
 llvm::Value *
 FunctionEmitContext::LaneMask(llvm::Value *v) {
 #ifdef ISPC_NVPTX_ENABLED
-    /* this makes mandelbrot example slower with "nvptx" target. 
+    /* this makes mandelbrot example slower with "nvptx" target.
      * Needs further investigation. */
     const char *__movmsk = g->target->getISA() == Target::NVPTX ? "__movmsk_ptx" : "__movmsk";
 #else
@@ -1494,7 +1494,7 @@ FunctionEmitContext::Insert(llvm::Value *vector, llvm::Value *lane, llvm::Value 
   std::string funcName = "__insert";
   assert(lAppendInsertExtractName(vector, funcName));
   assert(lane->getType() == LLVMTypes::Int32Type);
-  
+
   llvm::Function *func = m->module->getFunction(funcName.c_str());
   assert(func != NULL);
   std::vector<llvm::Value *> args;
@@ -1511,7 +1511,7 @@ FunctionEmitContext::Extract(llvm::Value *vector, llvm::Value *lane)
   std::string funcName = "__extract";
   assert(lAppendInsertExtractName(vector, funcName));
   assert(lane->getType() == LLVMTypes::Int32Type);
-  
+
   llvm::Function *func = m->module->getFunction(funcName.c_str());
   assert(func != NULL);
   std::vector<llvm::Value *> args;
@@ -2823,7 +2823,7 @@ FunctionEmitContext::loadUniformFromSOA(llvm::Value *ptr, llvm::Value *mask,
 
 llvm::Value *
 FunctionEmitContext::LoadInst(llvm::Value *ptr, llvm::Value *mask,
-                              const Type *ptrRefType, const char *name, 
+                              const Type *ptrRefType, const char *name,
                               bool one_elem) {
     if (ptr == NULL) {
         AssertPos(currentPos, m->errorCount > 0);
@@ -3285,8 +3285,8 @@ FunctionEmitContext::scatter(llvm::Value *value, llvm::Value *ptr,
     const PointerType *pt = CastType<PointerType>(valueType);
 
     // And everything should be a pointer or atomic (or enum) from here on out...
-    AssertPos(currentPos, 
-              pt != NULL 
+    AssertPos(currentPos,
+              pt != NULL
               || CastType<AtomicType>(valueType) != NULL
               || CastType<EnumType>(valueType) != NULL);
 
@@ -3887,7 +3887,7 @@ FunctionEmitContext::LaunchInst(llvm::Value *callee,
       llvm::Function *F = llvm::dyn_cast<llvm::Function>(callee);
       const unsigned int nArgs = F->arg_size();
       llvm::Function::const_arg_iterator I = F->arg_begin(), E = F->arg_end();
-      for (; I != E; ++I) 
+      for (; I != E; ++I)
         argTypes.push_back(I->getType());
       llvm::Type *st = llvm::StructType::get(*g->ctx, argTypes);
       llvm::StructType *argStructType = static_cast<llvm::StructType *>(st);
@@ -3908,24 +3908,24 @@ FunctionEmitContext::LaunchInst(llvm::Value *callee,
       llvm::BasicBlock* if_true  = CreateBasicBlock("if_true");
       llvm::BasicBlock* if_false = CreateBasicBlock("if_false");
 
-      /* check if the pointer returned by ISPCAlloc is not NULL 
+      /* check if the pointer returned by ISPCAlloc is not NULL
        * --------------
-       * this is a workaround for not checking the value of programIndex 
+       * this is a workaround for not checking the value of programIndex
        * because ISPCAlloc will return NULL pointer for all programIndex > 0
        * of course, if ISPAlloc fails to get parameter buffer, the pointer for programIndex = 0
        * will also be NULL
-       * This check must be added, and also rewrite the code to make it less opaque 
+       * This check must be added, and also rewrite the code to make it less opaque
        */
       llvm::Value* cmp1 = CmpInst(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_NE, voidi64, LLVMInt64(0), "cmp1");
       BranchInst(if_true, if_false, cmp1);
 
       /**********************/
-      bblock = if_true;    
+      bblock = if_true;
 
       // label_if_then block:
       llvm::Type *pt = llvm::PointerType::getUnqual(st);
       llvm::Value *argmem = BitCastInst(voidmem, pt);
-      for (unsigned int i = 0; i < argVals.size(); ++i) 
+      for (unsigned int i = 0; i < argVals.size(); ++i)
       {
         llvm::Value *ptr = AddElementOffset(argmem, i, NULL, "funarg");
         // don't need to do masked store here, I think
@@ -4027,7 +4027,7 @@ FunctionEmitContext::LaunchInst(llvm::Value *callee,
 
 void
 FunctionEmitContext::SyncInst() {
-#ifdef ISPC_NVPTX_ENABLED 
+#ifdef ISPC_NVPTX_ENABLED
     if (g->target->getISA() == Target::NVPTX)
     {
       llvm::Value *launchGroupHandle = LoadInst(launchGroupHandlePtr);
