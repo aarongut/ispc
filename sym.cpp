@@ -206,6 +206,14 @@ SymbolTable::LookupPolyFunction(const char *name) {
     return polyFunctions[name];
 }
 
+void
+SymbolTable::GetPolyFunctions(std::vector<std::string> *funcs) {
+    FunctionMapType::iterator it = polyFunctions.begin();
+    for (; it != polyFunctions.end(); it++) {
+        funcs->push_back(it->first);
+    }
+}
+
 
 bool
 SymbolTable::AddType(const char *name, const Type *type, SourcePos pos) {

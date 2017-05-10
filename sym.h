@@ -185,6 +185,8 @@ public:
 
     std::vector<Symbol *>& LookupPolyFunction(const char *name);
 
+    void GetPolyFunctions(std::vector<std::string> *funcs);
+
     /** Returns all of the functions in the symbol table that match the given
         predicate.
 
