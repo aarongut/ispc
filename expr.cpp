@@ -8099,6 +8099,11 @@ SymbolExpr::ReplacePolyType(const PolyType *from, const Type *to) {
     if (!symbol)
         return NULL;
 
+    Symbol *tmp = m->symbolTable->LookupVariable(symbol->name.c_str());
+    if (tmp) {
+        tmp->parentFunction = symbol->parentFunction;
+        symbol = tmp;
+    }
 
     if (Type::EqualForReplacement(symbol->type->GetBaseType(), from)) {
         symbol->type = PolyType::ReplaceType(symbol->type, to);
@@ -8173,6 +8178,14 @@ FunctionSymbolExpr::TypeCheck() {
 
 Expr *
 FunctionSymbolExpr::Optimize() {
+    return this;
+}
+
+Expr *
+FunctionSymbolExpr::ReplacePolyType(const PolyType *from, const Type *to) {
+    // force re-evaluation of overloaded type
+    this->triedToResolve = false;
+
     return this;
 }
 
@@ -8422,6 +8435,16 @@ FunctionSymbolExpr::computeOverloadCost(const FunctionType *ftype,
                 cost[i] += 8 * costScale;
                 continue;
             }
+            if (callTypeNC->IsPolymorphicType()) {
+                const PolyType *callTypeP =
+                    CastType<PolyType>(callTypeNC->GetBaseType());
+                if (callTypeP->CanBeType(fargTypeNC->GetBaseType()) &&
+                    callTypeNC->IsArrayType() == fargTypeNC->IsArrayType() &&
+                    callTypeNC->IsPointerType() == fargTypeNC->IsPointerType()){
+                    cost[i] += 8 * costScale;
+                    continue;
+                }
+            }
             if (fargType->IsVaryingType() && callType->IsUniformType()) {
                 // Here we deal with brodcasting uniform to varying.
                 // callType - varying and fargType - uniform is forbidden.
@@ -8548,6 +8571,12 @@ FunctionSymbolExpr::ResolveOverloads(SourcePos argPos,
         return true;
     }
     else if (matches.size() > 1) {
+        for (size_t i=0; i<argTypes.size(); i++) {
+            if (argTypes[i]->IsPolymorphicType()) {
+                matchingFunc = matches[0];
+                return true;
+            }
+        }
         // Multiple matches: ambiguous
         std::string candidateMessage =
             lGetOverloadCandidateMessage(matches, argTypes, argCouldBeNULL);

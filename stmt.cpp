@@ -559,7 +559,8 @@ DeclStmt::TypeCheck() {
         // an int as the constValue later...
         const Type *type = vars[i].sym->type;
         if (CastType<AtomicType>(type) != NULL ||
-            CastType<EnumType>(type) != NULL) {
+            CastType<EnumType>(type) != NULL ||
+            CastType<PolyType>(type) != NULL) {
             // If it's an expr list with an atomic type, we'll later issue
             // an error.  Need to leave vars[i].init as is in that case so
             // it is in fact caught later, though.
@@ -577,9 +578,15 @@ DeclStmt::TypeCheck() {
 Stmt *
 DeclStmt::ReplacePolyType(const PolyType *from, const Type *to) {
     for (size_t i = 0; i < vars.size(); i++) {
+        vars[i].sym = new Symbol(*vars[i].sym);
+        m->symbolTable->AddVariable(vars[i].sym, false);
         Symbol *s = vars[i].sym;
         if (Type::EqualForReplacement(s->type->GetBaseType(), from)) {
             s->type = PolyType::ReplaceType(s->type, to);
+
+            // this typecast *should* be valid after typechecking
+            vars[i].init = TypeConvertExpr(vars[i].init, s->type,
+                                           "initializer");
         }
     }
 

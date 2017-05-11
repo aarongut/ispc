@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "hello.ispc.h"
+#include "hello.h"
 
 int main() {
     float A[100];
