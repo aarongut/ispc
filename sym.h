@@ -141,7 +141,7 @@ public:
         with a symbol defined at the same scope.  (Symbols may shaodow
         symbols in outer scopes; a warning is issued in this case, but this
         method still returns true.) */
-    bool AddVariable(Symbol *symbol);
+    bool AddVariable(Symbol *symbol, bool issueScopeWarning=true);
 
     /** Looks for a variable with the given name in the symbol table.  This
         method searches outward from the innermost scope to the outermost,

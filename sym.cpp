@@ -95,14 +95,14 @@ SymbolTable::PopScope() {
 
 
 bool
-SymbolTable::AddVariable(Symbol *symbol) {
+SymbolTable::AddVariable(Symbol *symbol, bool issueScopeWarning) {
     Assert(symbol != NULL);
 
     // Check to see if a symbol of the same name has already been declared.
     for (int i = (int)variables.size() - 1; i >= 0; --i) {
         SymbolMapType &sm = *(variables[i]);
         if (sm.find(symbol->name) != sm.end()) {
-            if (i == (int)variables.size()-1) {
+            if (i == (int)variables.size()-1 && issueScopeWarning) {
                 // If a symbol of the same name was declared in the
                 // same scope, it's an error.
                 Error(symbol->pos, "Ignoring redeclaration of symbol \"%s\".",
@@ -112,9 +112,11 @@ SymbolTable::AddVariable(Symbol *symbol) {
             else {
                 // Otherwise it's just shadowing something else, which
                 // is legal but dangerous..
-                Warning(symbol->pos,
-                        "Symbol \"%s\" shadows symbol declared in outer scope.",
-                        symbol->name.c_str());
+                if (issueScopeWarning) {
+                    Warning(symbol->pos,
+                            "Symbol \"%s\" shadows symbol declared in outer scope.",
+                            symbol->name.c_str());
+                }
                 (*variables.back())[symbol->name] = symbol;
                 return true;
             }

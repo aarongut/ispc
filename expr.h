@@ -96,6 +96,7 @@ public:
         encountered, NULL should be returned. */
     virtual Expr *TypeCheck() = 0;
 
+    Expr *Copy();
 
     /** This method replaces a polymorphic type with a specific atomic type */
     Expr *ReplacePolyType(const PolyType *polyType, const Type *replacement);
@@ -383,6 +384,51 @@ public:
 
 protected:
     mutable const Type *type, *lvalueType;
+};
+
+class StructMemberExpr : public MemberExpr
+{
+public:
+    StructMemberExpr(Expr *e, const char *id, SourcePos p,
+                     SourcePos idpos, bool derefLValue);
+
+    static inline bool classof(StructMemberExpr const*) { return true; }
+    static inline bool classof(ASTNode const* N) {
+        return N->getValueID() == StructMemberExprID;
+    }
+
+    const Type *GetType() const;
+    const Type *GetLValueType() const;
+    int getElementNumber() const;
+    const Type *getElementType() const;
+
+private:
+    const StructType *getStructType() const;
+};
+
+
+class VectorMemberExpr : public MemberExpr
+{
+public:
+    VectorMemberExpr(Expr *e, const char *id, SourcePos p,
+                     SourcePos idpos, bool derefLValue);
+
+    static inline bool classof(VectorMemberExpr const*) { return true; }
+    static inline bool classof(ASTNode const* N) {
+        return N->getValueID() == VectorMemberExprID;
+    }
+
+    llvm::Value *GetValue(FunctionEmitContext* ctx) const;
+    llvm::Value *GetLValue(FunctionEmitContext* ctx) const;
+    const Type *GetType() const;
+    const Type *GetLValueType() const;
+
+    int getElementNumber() const;
+    const Type *getElementType() const;
+
+private:
+    const VectorType *exprVectorType;
+    const VectorType *memberType;
 };
 
 
@@ -715,6 +761,7 @@ public:
     Symbol *GetBaseSymbol() const;
     Expr *TypeCheck();
     Expr *Optimize();
+    Expr *ReplacePolyType(const PolyType *from, const Type *to);
     void Print() const;
     int EstimateCost() const;
     llvm::Constant *GetConstant(const Type *type) const;

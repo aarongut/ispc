@@ -86,7 +86,7 @@ AST::GenerateIR() {
 
 ASTNode *
 WalkAST(ASTNode *node, ASTPreCallBackFunc preFunc, ASTPostCallBackFunc postFunc,
-        void *data) {
+        void *data, ASTPostCallBackFunc preUpdate) {
     if (node == NULL)
         return node;
 
@@ -95,6 +95,10 @@ WalkAST(ASTNode *node, ASTPreCallBackFunc preFunc, ASTPostCallBackFunc postFunc,
         if (preFunc(node, data) == false)
             // The function asked us to not continue recursively, so stop.
             return node;
+    }
+
+    if (preUpdate != NULL) {
+        node = preUpdate(node, data);
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -120,54 +124,54 @@ WalkAST(ASTNode *node, ASTPreCallBackFunc preFunc, ASTPostCallBackFunc postFunc,
         UnmaskedStmt *ums;
 
         if ((es = llvm::dyn_cast<ExprStmt>(node)) != NULL)
-            es->expr = (Expr *)WalkAST(es->expr, preFunc, postFunc, data);
+            es->expr = (Expr *)WalkAST(es->expr, preFunc, postFunc, data, preUpdate);
         else if ((ds = llvm::dyn_cast<DeclStmt>(node)) != NULL) {
             for (unsigned int i = 0; i < ds->vars.size(); ++i)
                 ds->vars[i].init = (Expr *)WalkAST(ds->vars[i].init, preFunc,
-                                                   postFunc, data);
+                                                   postFunc, data, preUpdate);
         }
         else if ((is = llvm::dyn_cast<IfStmt>(node)) != NULL) {
-            is->test = (Expr *)WalkAST(is->test, preFunc, postFunc, data);
+            is->test = (Expr *)WalkAST(is->test, preFunc, postFunc, data, preUpdate);
             is->trueStmts = (Stmt *)WalkAST(is->trueStmts, preFunc,
-                                            postFunc, data);
+                                            postFunc, data, preUpdate);
             is->falseStmts = (Stmt *)WalkAST(is->falseStmts, preFunc,
-                                             postFunc, data);
+                                             postFunc, data, preUpdate);
         }
         else if ((dos = llvm::dyn_cast<DoStmt>(node)) != NULL) {
             dos->testExpr = (Expr *)WalkAST(dos->testExpr, preFunc,
-                                            postFunc, data);
+                                            postFunc, data, preUpdate);
             dos->bodyStmts = (Stmt *)WalkAST(dos->bodyStmts, preFunc,
-                                             postFunc, data);
+                                             postFunc, data, preUpdate);
         }
         else if ((fs = llvm::dyn_cast<ForStmt>(node)) != NULL) {
-            fs->init = (Stmt *)WalkAST(fs->init, preFunc, postFunc, data);
-            fs->test = (Expr *)WalkAST(fs->test, preFunc, postFunc, data);
-            fs->step = (Stmt *)WalkAST(fs->step, preFunc, postFunc, data);
-            fs->stmts = (Stmt *)WalkAST(fs->stmts, preFunc, postFunc, data);
+            fs->init = (Stmt *)WalkAST(fs->init, preFunc, postFunc, data, preUpdate);
+            fs->test = (Expr *)WalkAST(fs->test, preFunc, postFunc, data, preUpdate);
+            fs->step = (Stmt *)WalkAST(fs->step, preFunc, postFunc, data, preUpdate);
+            fs->stmts = (Stmt *)WalkAST(fs->stmts, preFunc, postFunc, data, preUpdate);
         }
         else if ((fes = llvm::dyn_cast<ForeachStmt>(node)) != NULL) {
             for (unsigned int i = 0; i < fes->startExprs.size(); ++i)
                 fes->startExprs[i] = (Expr *)WalkAST(fes->startExprs[i], preFunc,
-                                                     postFunc, data);
+                                                     postFunc, data, preUpdate);
             for (unsigned int i = 0; i < fes->endExprs.size(); ++i)
                 fes->endExprs[i] = (Expr *)WalkAST(fes->endExprs[i], preFunc,
-                                                   postFunc, data);
-            fes->stmts = (Stmt *)WalkAST(fes->stmts, preFunc, postFunc, data);
+                                                   postFunc, data, preUpdate);
+            fes->stmts = (Stmt *)WalkAST(fes->stmts, preFunc, postFunc, data, preUpdate);
         }
         else if ((fas = llvm::dyn_cast<ForeachActiveStmt>(node)) != NULL) {
-            fas->stmts = (Stmt *)WalkAST(fas->stmts, preFunc, postFunc, data);
+            fas->stmts = (Stmt *)WalkAST(fas->stmts, preFunc, postFunc, data, preUpdate);
         }
         else if ((fus = llvm::dyn_cast<ForeachUniqueStmt>(node)) != NULL) {
-            fus->expr = (Expr *)WalkAST(fus->expr, preFunc, postFunc, data);
-            fus->stmts = (Stmt *)WalkAST(fus->stmts, preFunc, postFunc, data);
+            fus->expr = (Expr *)WalkAST(fus->expr, preFunc, postFunc, data, preUpdate);
+            fus->stmts = (Stmt *)WalkAST(fus->stmts, preFunc, postFunc, data, preUpdate);
         }
         else if ((cs = llvm::dyn_cast<CaseStmt>(node)) != NULL)
-            cs->stmts = (Stmt *)WalkAST(cs->stmts, preFunc, postFunc, data);
+            cs->stmts = (Stmt *)WalkAST(cs->stmts, preFunc, postFunc, data, preUpdate);
         else if ((defs = llvm::dyn_cast<DefaultStmt>(node)) != NULL)
-            defs->stmts = (Stmt *)WalkAST(defs->stmts, preFunc, postFunc, data);
+            defs->stmts = (Stmt *)WalkAST(defs->stmts, preFunc, postFunc, data, preUpdate);
         else if ((ss = llvm::dyn_cast<SwitchStmt>(node)) != NULL) {
-            ss->expr = (Expr *)WalkAST(ss->expr, preFunc, postFunc, data);
-            ss->stmts = (Stmt *)WalkAST(ss->stmts, preFunc, postFunc, data);
+            ss->expr = (Expr *)WalkAST(ss->expr, preFunc, postFunc, data, preUpdate);
+            ss->stmts = (Stmt *)WalkAST(ss->stmts, preFunc, postFunc, data, preUpdate);
         }
         else if (llvm::dyn_cast<BreakStmt>(node) != NULL ||
                  llvm::dyn_cast<ContinueStmt>(node) != NULL ||
@@ -175,22 +179,22 @@ WalkAST(ASTNode *node, ASTPreCallBackFunc preFunc, ASTPostCallBackFunc postFunc,
             // nothing
         }
         else if ((ls = llvm::dyn_cast<LabeledStmt>(node)) != NULL)
-            ls->stmt = (Stmt *)WalkAST(ls->stmt, preFunc, postFunc, data);
+            ls->stmt = (Stmt *)WalkAST(ls->stmt, preFunc, postFunc, data, preUpdate);
         else if ((rs = llvm::dyn_cast<ReturnStmt>(node)) != NULL)
-            rs->expr = (Expr *)WalkAST(rs->expr, preFunc, postFunc, data);
+            rs->expr = (Expr *)WalkAST(rs->expr, preFunc, postFunc, data, preUpdate);
         else if ((sl = llvm::dyn_cast<StmtList>(node)) != NULL) {
             std::vector<Stmt *> &sls = sl->stmts;
             for (unsigned int i = 0; i < sls.size(); ++i)
-                sls[i] = (Stmt *)WalkAST(sls[i], preFunc, postFunc, data);
+                sls[i] = (Stmt *)WalkAST(sls[i], preFunc, postFunc, data, preUpdate);
         }
         else if ((ps = llvm::dyn_cast<PrintStmt>(node)) != NULL)
-            ps->values = (Expr *)WalkAST(ps->values, preFunc, postFunc, data);
+            ps->values = (Expr *)WalkAST(ps->values, preFunc, postFunc, data, preUpdate);
         else if ((as = llvm::dyn_cast<AssertStmt>(node)) != NULL)
-            as->expr = (Expr *)WalkAST(as->expr, preFunc, postFunc, data);
+            as->expr = (Expr *)WalkAST(as->expr, preFunc, postFunc, data, preUpdate);
         else if ((dels = llvm::dyn_cast<DeleteStmt>(node)) != NULL)
-            dels->expr = (Expr *)WalkAST(dels->expr, preFunc, postFunc, data);
+            dels->expr = (Expr *)WalkAST(dels->expr, preFunc, postFunc, data, preUpdate);
         else if ((ums = llvm::dyn_cast<UnmaskedStmt>(node)) != NULL)
-            ums->stmts = (Stmt *)WalkAST(ums->stmts, preFunc, postFunc, data);
+            ums->stmts = (Stmt *)WalkAST(ums->stmts, preFunc, postFunc, data, preUpdate);
         else
             FATAL("Unhandled statement type in WalkAST()");
     }
@@ -215,57 +219,57 @@ WalkAST(ASTNode *node, ASTPreCallBackFunc preFunc, ASTPostCallBackFunc postFunc,
         NewExpr *newe;
 
         if ((ue = llvm::dyn_cast<UnaryExpr>(node)) != NULL)
-            ue->expr = (Expr *)WalkAST(ue->expr, preFunc, postFunc, data);
+            ue->expr = (Expr *)WalkAST(ue->expr, preFunc, postFunc, data, preUpdate);
         else if ((be = llvm::dyn_cast<BinaryExpr>(node)) != NULL) {
-            be->arg0 = (Expr *)WalkAST(be->arg0, preFunc, postFunc, data);
-            be->arg1 = (Expr *)WalkAST(be->arg1, preFunc, postFunc, data);
+            be->arg0 = (Expr *)WalkAST(be->arg0, preFunc, postFunc, data, preUpdate);
+            be->arg1 = (Expr *)WalkAST(be->arg1, preFunc, postFunc, data, preUpdate);
         }
         else if ((ae = llvm::dyn_cast<AssignExpr>(node)) != NULL) {
-            ae->lvalue = (Expr *)WalkAST(ae->lvalue, preFunc, postFunc, data);
-            ae->rvalue = (Expr *)WalkAST(ae->rvalue, preFunc, postFunc, data);
+            ae->lvalue = (Expr *)WalkAST(ae->lvalue, preFunc, postFunc, data, preUpdate);
+            ae->rvalue = (Expr *)WalkAST(ae->rvalue, preFunc, postFunc, data, preUpdate);
         }
         else if ((se = llvm::dyn_cast<SelectExpr>(node)) != NULL) {
-            se->test = (Expr *)WalkAST(se->test, preFunc, postFunc, data);
-            se->expr1 = (Expr *)WalkAST(se->expr1, preFunc, postFunc, data);
-            se->expr2 = (Expr *)WalkAST(se->expr2, preFunc, postFunc, data);
+            se->test = (Expr *)WalkAST(se->test, preFunc, postFunc, data, preUpdate);
+            se->expr1 = (Expr *)WalkAST(se->expr1, preFunc, postFunc, data, preUpdate);
+            se->expr2 = (Expr *)WalkAST(se->expr2, preFunc, postFunc, data, preUpdate);
         }
         else if ((el = llvm::dyn_cast<ExprList>(node)) != NULL) {
             for (unsigned int i = 0; i < el->exprs.size(); ++i)
                 el->exprs[i] = (Expr *)WalkAST(el->exprs[i], preFunc,
-                                               postFunc, data);
+                                               postFunc, data, preUpdate);
         }
         else if ((fce = llvm::dyn_cast<FunctionCallExpr>(node)) != NULL) {
-            fce->func = (Expr *)WalkAST(fce->func, preFunc, postFunc, data);
-            fce->args = (ExprList *)WalkAST(fce->args, preFunc, postFunc, data);
+            fce->func = (Expr *)WalkAST(fce->func, preFunc, postFunc, data, preUpdate);
+            fce->args = (ExprList *)WalkAST(fce->args, preFunc, postFunc, data, preUpdate);
             for (int k = 0; k < 3; k++)
               fce->launchCountExpr[0] = (Expr *)WalkAST(fce->launchCountExpr[0], preFunc,
-                                                   postFunc, data);
+                                                   postFunc, data, preUpdate);
         }
         else if ((ie = llvm::dyn_cast<IndexExpr>(node)) != NULL) {
-            ie->baseExpr = (Expr *)WalkAST(ie->baseExpr, preFunc, postFunc, data);
-            ie->index = (Expr *)WalkAST(ie->index, preFunc, postFunc, data);
+            ie->baseExpr = (Expr *)WalkAST(ie->baseExpr, preFunc, postFunc, data, preUpdate);
+            ie->index = (Expr *)WalkAST(ie->index, preFunc, postFunc, data, preUpdate);
         }
         else if ((me = llvm::dyn_cast<MemberExpr>(node)) != NULL)
-            me->expr = (Expr *)WalkAST(me->expr, preFunc, postFunc, data);
+            me->expr = (Expr *)WalkAST(me->expr, preFunc, postFunc, data, preUpdate);
         else if ((tce = llvm::dyn_cast<TypeCastExpr>(node)) != NULL)
-            tce->expr = (Expr *)WalkAST(tce->expr, preFunc, postFunc, data);
+            tce->expr = (Expr *)WalkAST(tce->expr, preFunc, postFunc, data, preUpdate);
         else if ((re = llvm::dyn_cast<ReferenceExpr>(node)) != NULL)
-            re->expr = (Expr *)WalkAST(re->expr, preFunc, postFunc, data);
+            re->expr = (Expr *)WalkAST(re->expr, preFunc, postFunc, data, preUpdate);
         else if ((ptrderef = llvm::dyn_cast<PtrDerefExpr>(node)) != NULL)
             ptrderef->expr = (Expr *)WalkAST(ptrderef->expr, preFunc, postFunc,
-                                             data);
+                                             data, preUpdate);
         else if ((refderef = llvm::dyn_cast<RefDerefExpr>(node)) != NULL)
             refderef->expr = (Expr *)WalkAST(refderef->expr, preFunc, postFunc,
-                                             data);
+                                             data, preUpdate);
         else if ((soe = llvm::dyn_cast<SizeOfExpr>(node)) != NULL)
-            soe->expr = (Expr *)WalkAST(soe->expr, preFunc, postFunc, data);
+            soe->expr = (Expr *)WalkAST(soe->expr, preFunc, postFunc, data, preUpdate);
         else if ((aoe = llvm::dyn_cast<AddressOfExpr>(node)) != NULL)
-            aoe->expr = (Expr *)WalkAST(aoe->expr, preFunc, postFunc, data);
+            aoe->expr = (Expr *)WalkAST(aoe->expr, preFunc, postFunc, data, preUpdate);
         else if ((newe = llvm::dyn_cast<NewExpr>(node)) != NULL) {
             newe->countExpr = (Expr *)WalkAST(newe->countExpr, preFunc,
-                                              postFunc, data);
+                                              postFunc, data, preUpdate);
             newe->initExpr = (Expr *)WalkAST(newe->initExpr, preFunc,
-                                             postFunc, data);
+                                             postFunc, data, preUpdate);
         }
         else if (llvm::dyn_cast<SymbolExpr>(node) != NULL ||
                  llvm::dyn_cast<ConstExpr>(node) != NULL ||
@@ -536,11 +540,21 @@ lTranslatePolyNode(ASTNode *node, void *d) {
     return node->ReplacePolyType(data->polyType, data->replacement);
 }
 
+static ASTNode *
+lCopyNode(ASTNode *node, void *) {
+    return node->Copy();
+}
+
 ASTNode *
 TranslatePoly(ASTNode *root, const PolyType *polyType, const Type *replacement) {
     struct PolyData data;
     data.polyType = polyType;
     data.replacement = replacement;
 
-    return WalkAST(root, NULL, lTranslatePolyNode, &data);
+    return WalkAST(root, NULL, lTranslatePolyNode, &data, lCopyNode);
+}
+
+ASTNode *
+CopyAST(ASTNode *root) {
+    return WalkAST(root, NULL, NULL, NULL, lCopyNode);
 }

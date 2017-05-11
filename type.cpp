@@ -721,9 +721,11 @@ PolyType::ReplaceType(const Type *from, const Type *to) {
     if (from->IsVaryingType())
         t = t->GetAsVaryingType();
 
-    fprintf(stderr, "Replacing type \"%s\" with \"%s\"\n",
-            from->GetString().c_str(),
-            t->GetString().c_str());
+    if (g->debugPrint) {
+        fprintf(stderr, "Replacing type \"%s\" with \"%s\"\n",
+                from->GetString().c_str(),
+                t->GetString().c_str());
+    }
 
     return t;
 }

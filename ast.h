@@ -68,6 +68,8 @@ public:
         pointer in place of the original ASTNode *. */
     virtual ASTNode *TypeCheck() = 0;
 
+    virtual ASTNode *Copy() = 0;
+
     virtual ASTNode *ReplacePolyType(const PolyType *, const Type *) = 0;
 
     /** Estimate the execution cost of the node (not including the cost of
@@ -177,7 +179,8 @@ typedef ASTNode * (* ASTPostCallBackFunc)(ASTNode *node, void *data);
     doing so, calls postFunc, at the node.  The return value from the
     postFunc call is ignored. */
 extern ASTNode *WalkAST(ASTNode *root, ASTPreCallBackFunc preFunc,
-                        ASTPostCallBackFunc postFunc, void *data);
+                        ASTPostCallBackFunc postFunc, void *data,
+                        ASTPostCallBackFunc preUpdate = NULL);
 
 /** Perform simple optimizations on the AST or portion thereof passed to
     this function, returning the resulting AST. */
@@ -208,6 +211,8 @@ extern Stmt *TypeCheck(Stmt *);
 extern int EstimateCost(ASTNode *root);
 
 extern ASTNode * TranslatePoly(ASTNode *root, const PolyType *polyType, const Type *replacement);
+
+extern ASTNode * CopyAST(ASTNode *root);
 
 /** Returns true if it would be safe to run the given code with an "all
     off" mask. */

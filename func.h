@@ -44,7 +44,7 @@
 
 class Function {
 public:
-    Function(Symbol *sym, Stmt *code);
+    Function(Symbol *sym, Stmt *code, bool typecheck=true);
 
     const Type *GetReturnType() const;
     const FunctionType *GetType() const;

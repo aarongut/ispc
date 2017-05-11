@@ -35,6 +35,7 @@
     @brief File with definitions classes related to statements in the language
 */
 
+#include "ast.h"
 #include "stmt.h"
 #include "ctx.h"
 #include "util.h"
@@ -78,7 +79,81 @@ Stmt::Optimize() {
 }
 
 Stmt *
-Stmt::ReplacePolyType(const PolyType *polyType, const Type *replacement) {
+Stmt::Copy() {
+    Stmt *copy;
+    switch (getValueID()) {
+        case AssertStmtID:
+            copy = (Stmt*)new AssertStmt(*(AssertStmt*)this);
+            break;
+        case BreakStmtID:
+            copy = (Stmt*)new BreakStmt(*(BreakStmt*)this);
+            break;
+        case CaseStmtID:
+            copy = (Stmt*)new CaseStmt(*(CaseStmt*)this);
+            break;
+        case ContinueStmtID:
+            copy = (Stmt*)new ContinueStmt(*(ContinueStmt*)this);
+            break;
+        case DeclStmtID:
+            copy = (Stmt*)new DeclStmt(*(DeclStmt*)this);
+            break;
+        case DefaultStmtID:
+            copy = (Stmt*)new DefaultStmt(*(DefaultStmt*)this);
+            break;
+        case DeleteStmtID:
+            copy = (Stmt*)new DeleteStmt(*(DeleteStmt*)this);
+            break;
+        case DoStmtID:
+            copy = (Stmt*)new DoStmt(*(DoStmt*)this);
+            break;
+        case ExprStmtID:
+            copy = (Stmt*)new ExprStmt(*(ExprStmt*)this);
+            break;
+        case ForeachActiveStmtID:
+            copy = (Stmt*)new ForeachActiveStmt(*(ForeachActiveStmt*)this);
+            break;
+        case ForeachStmtID:
+            copy = (Stmt*)new ForeachStmt(*(ForeachStmt*)this);
+            break;
+        case ForeachUniqueStmtID:
+            copy = (Stmt*)new ForeachUniqueStmt(*(ForeachUniqueStmt*)this);
+            break;
+        case ForStmtID:
+            copy = (Stmt*)new ForStmt(*(ForStmt*)this);
+            break;
+        case GotoStmtID:
+            copy = (Stmt*)new GotoStmt(*(GotoStmt*)this);
+            break;
+        case IfStmtID:
+            copy = (Stmt*)new IfStmt(*(IfStmt*)this);
+            break;
+        case LabeledStmtID:
+            copy = (Stmt*)new LabeledStmt(*(LabeledStmt*)this);
+            break;
+        case PrintStmtID:
+            copy = (Stmt*)new PrintStmt(*(PrintStmt*)this);
+            break;
+        case ReturnStmtID:
+            copy = (Stmt*)new ReturnStmt(*(ReturnStmt*)this);
+            break;
+        case StmtListID:
+            copy = (Stmt*)new StmtList(*(StmtList*)this);
+            break;
+        case SwitchStmtID:
+            copy = (Stmt*)new SwitchStmt(*(SwitchStmt*)this);
+            break;
+        case UnmaskedStmtID:
+            copy = (Stmt*)new UnmaskedStmt(*(UnmaskedStmt*)this);
+            break;
+        default:
+            FATAL("Unmatched case in Stmt::Copy");
+            copy = this; // just to silence the compiler
+    }
+    return copy;
+}
+
+Stmt *
+Stmt::ReplacePolyType(const PolyType *, const Type *) {
     return this;
 }
 
@@ -484,7 +559,8 @@ DeclStmt::TypeCheck() {
         // an int as the constValue later...
         const Type *type = vars[i].sym->type;
         if (CastType<AtomicType>(type) != NULL ||
-            CastType<EnumType>(type) != NULL) {
+            CastType<EnumType>(type) != NULL ||
+            CastType<PolyType>(type) != NULL) {
             // If it's an expr list with an atomic type, we'll later issue
             // an error.  Need to leave vars[i].init as is in that case so
             // it is in fact caught later, though.
@@ -502,9 +578,15 @@ DeclStmt::TypeCheck() {
 Stmt *
 DeclStmt::ReplacePolyType(const PolyType *from, const Type *to) {
     for (size_t i = 0; i < vars.size(); i++) {
+        vars[i].sym = new Symbol(*vars[i].sym);
+        m->symbolTable->AddVariable(vars[i].sym, false);
         Symbol *s = vars[i].sym;
         if (Type::EqualForReplacement(s->type->GetBaseType(), from)) {
             s->type = PolyType::ReplaceType(s->type, to);
+
+            // this typecast *should* be valid after typechecking
+            vars[i].init = TypeConvertExpr(vars[i].init, s->type,
+                                           "initializer");
         }
     }
 
@@ -1487,6 +1569,17 @@ ForeachStmt::ForeachStmt(const std::vector<Symbol *> &lvs,
       stmts(s) {
 }
 
+/*
+ForeachStmt::ForeachStmt(ForeachStmt *base)
+    : Stmt(base->pos, ForeachStmtID) {
+    dimVariables = base->dimVariables;
+    startExprs = base->startExprs;
+    endExprs = base->endExprs;
+    isTiled = base->isTiled;
+    stmts = base->stmts;
+}
+*/
+
 
 /* Given a uniform counter value in the memory location pointed to by
    uniformCounterPtr, compute the corresponding set of varying counter
@@ -1730,8 +1823,10 @@ ForeachStmt::EmitCode(FunctionEmitContext *ctx) const {
         // Start and end value for this loop dimension
         llvm::Value *sv = startExprs[i]->GetValue(ctx);
         llvm::Value *ev = endExprs[i]->GetValue(ctx);
-        if (sv == NULL || ev == NULL)
+        if (sv == NULL || ev == NULL) {
+            fprintf(stderr, "ev is NULL again :(\n");
             return;
+        }
         startVals.push_back(sv);
         endVals.push_back(ev);
 
@@ -2189,21 +2284,6 @@ ForeachStmt::TypeCheck() {
     }
 
     return anyErrors ? NULL : this;
-}
-
-Stmt *
-ForeachStmt::ReplacePolyType(const PolyType *from, const Type *to) {
-    if (!stmts)
-        return NULL;
-
-    for (size_t i=0; i<dimVariables.size(); i++) {
-        const Type *t = dimVariables[i]->type;
-        if (Type::EqualForReplacement(t->GetBaseType(), from)) {
-            t = PolyType::ReplaceType(t, to);
-        }
-    }
-
-    return this;
 }
 
 

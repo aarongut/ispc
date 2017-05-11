@@ -113,7 +113,81 @@ Expr::GetBaseSymbol() const {
 }
 
 Expr *
-Expr::ReplacePolyType(const PolyType *polyType, const Type *replacement) {
+Expr::Copy() {
+    Expr *copy;
+    switch (getValueID()) {
+        case AddressOfExprID:
+            copy = (Expr*)new AddressOfExpr(*(AddressOfExpr*)this);
+            break;
+        case AssignExprID:
+            copy = (Expr*)new AssignExpr(*(AssignExpr*)this);
+            break;
+        case BinaryExprID:
+            copy = (Expr*)new BinaryExpr(*(BinaryExpr*)this);
+            break;
+        case ConstExprID:
+            copy = (Expr*)new ConstExpr(*(ConstExpr*)this);
+            break;
+        case PtrDerefExprID:
+            copy = (Expr*)new PtrDerefExpr(*(PtrDerefExpr*)this);
+            break;
+        case RefDerefExprID:
+            copy = (Expr*)new RefDerefExpr(*(RefDerefExpr*)this);
+            break;
+        case ExprListID:
+            copy = (Expr*)new ExprList(*(ExprList*)this);
+            break;
+        case FunctionCallExprID:
+            copy = (Expr*)new FunctionCallExpr(*(FunctionCallExpr*)this);
+            break;
+        case FunctionSymbolExprID:
+            copy = (Expr*)new FunctionSymbolExpr(*(FunctionSymbolExpr*)this);
+            break;
+        case IndexExprID:
+            copy = (Expr*)new IndexExpr(*(IndexExpr*)this);
+            break;
+        case StructMemberExprID:
+            copy = (Expr*)new StructMemberExpr(*(StructMemberExpr*)this);
+            break;
+        case VectorMemberExprID:
+            copy = (Expr*)new VectorMemberExpr(*(VectorMemberExpr*)this);
+            break;
+        case NewExprID:
+            copy = (Expr*)new NewExpr(*(NewExpr*)this);
+            break;
+        case NullPointerExprID:
+            copy = (Expr*)new NullPointerExpr(*(NullPointerExpr*)this);
+            break;
+        case ReferenceExprID:
+            copy = (Expr*)new ReferenceExpr(*(ReferenceExpr*)this);
+            break;
+        case SelectExprID:
+            copy = (Expr*)new SelectExpr(*(SelectExpr*)this);
+            break;
+        case SizeOfExprID:
+            copy = (Expr*)new SizeOfExpr(*(SizeOfExpr*)this);
+            break;
+        case SymbolExprID:
+            copy = (Expr*)new SymbolExpr(*(SymbolExpr*)this);
+            break;
+        case SyncExprID:
+            copy = (Expr*)new SyncExpr(*(SyncExpr*)this);
+            break;
+        case TypeCastExprID:
+            copy = (Expr*)new TypeCastExpr(*(TypeCastExpr*)this);
+            break;
+        case UnaryExprID:
+            copy = (Expr*)new UnaryExpr(*(UnaryExpr*)this);
+            break;
+        default:
+            FATAL("Unmatched case in Expr::Copy");
+            copy = this; // just to silence the compiler
+    }
+    return copy;
+}
+
+Expr *
+Expr::ReplacePolyType(const PolyType *, const Type *) {
     return this;
 }
 
@@ -4680,11 +4754,11 @@ IndexExpr::ReplacePolyType(const PolyType *from, const Type *to) {
     if (index == NULL || baseExpr == NULL)
         return NULL;
 
-    if (Type::EqualForReplacement(this->GetType()->GetBaseType(), from)) {
+    if (Type::EqualForReplacement(GetType()->GetBaseType(), from)) {
         type = PolyType::ReplaceType(type, to);
     }
 
-    if (Type::EqualForReplacement(this->GetLValueType()->GetBaseType(), from)) {
+    if (Type::EqualForReplacement(GetLValueType()->GetBaseType(), from)) {
         lvalueType = new PointerType(to, lvalueType->GetVariability(),
                                      lvalueType->IsConstType());
     }
@@ -4756,27 +4830,6 @@ lIdentifierToVectorElement(char id) {
 
 //////////////////////////////////////////////////
 // StructMemberExpr
-
-class StructMemberExpr : public MemberExpr
-{
-public:
-    StructMemberExpr(Expr *e, const char *id, SourcePos p,
-                     SourcePos idpos, bool derefLValue);
-
-    static inline bool classof(StructMemberExpr const*) { return true; }
-    static inline bool classof(ASTNode const* N) {
-        return N->getValueID() == StructMemberExprID;
-    }
-
-    const Type *GetType() const;
-    const Type *GetLValueType() const;
-    int getElementNumber() const;
-    const Type *getElementType() const;
-
-private:
-    const StructType *getStructType() const;
-};
-
 
 StructMemberExpr::StructMemberExpr(Expr *e, const char *id, SourcePos p,
                                    SourcePos idpos, bool derefLValue)
@@ -4928,31 +4981,6 @@ StructMemberExpr::getStructType() const {
 
 //////////////////////////////////////////////////
 // VectorMemberExpr
-
-class VectorMemberExpr : public MemberExpr
-{
-public:
-    VectorMemberExpr(Expr *e, const char *id, SourcePos p,
-                     SourcePos idpos, bool derefLValue);
-
-    static inline bool classof(VectorMemberExpr const*) { return true; }
-    static inline bool classof(ASTNode const* N) {
-        return N->getValueID() == VectorMemberExprID;
-    }
-
-    llvm::Value *GetValue(FunctionEmitContext* ctx) const;
-    llvm::Value *GetLValue(FunctionEmitContext* ctx) const;
-    const Type *GetType() const;
-    const Type *GetLValueType() const;
-
-    int getElementNumber() const;
-    const Type *getElementType() const;
-
-private:
-    const VectorType *exprVectorType;
-    const VectorType *memberType;
-};
-
 
 VectorMemberExpr::VectorMemberExpr(Expr *e, const char *id, SourcePos p,
                                    SourcePos idpos, bool derefLValue)
@@ -5339,12 +5367,8 @@ MemberExpr::ReplacePolyType(const PolyType *from, const Type *to) {
     if (expr == NULL)
         return NULL;
 
-    if (Type::EqualForReplacement(this->GetType()->GetBaseType(), from)) {
+    if (Type::EqualForReplacement(GetType()->GetBaseType(), from)) {
         type = PolyType::ReplaceType(type, to);
-    }
-
-    if (Type::EqualForReplacement(this->GetLValueType()->GetBaseType(), from)) {
-        lvalueType =  PolyType::ReplaceType(lvalueType, lvalueType);
     }
 
     return this;
@@ -8075,6 +8099,12 @@ SymbolExpr::ReplacePolyType(const PolyType *from, const Type *to) {
     if (!symbol)
         return NULL;
 
+    Symbol *tmp = m->symbolTable->LookupVariable(symbol->name.c_str());
+    if (tmp) {
+        tmp->parentFunction = symbol->parentFunction;
+        symbol = tmp;
+    }
+
     if (Type::EqualForReplacement(symbol->type->GetBaseType(), from)) {
         symbol->type = PolyType::ReplaceType(symbol->type, to);
     }
@@ -8148,6 +8178,14 @@ FunctionSymbolExpr::TypeCheck() {
 
 Expr *
 FunctionSymbolExpr::Optimize() {
+    return this;
+}
+
+Expr *
+FunctionSymbolExpr::ReplacePolyType(const PolyType *from, const Type *to) {
+    // force re-evaluation of overloaded type
+    this->triedToResolve = false;
+
     return this;
 }
 
@@ -8397,6 +8435,16 @@ FunctionSymbolExpr::computeOverloadCost(const FunctionType *ftype,
                 cost[i] += 8 * costScale;
                 continue;
             }
+            if (callTypeNC->IsPolymorphicType()) {
+                const PolyType *callTypeP =
+                    CastType<PolyType>(callTypeNC->GetBaseType());
+                if (callTypeP->CanBeType(fargTypeNC->GetBaseType()) &&
+                    callTypeNC->IsArrayType() == fargTypeNC->IsArrayType() &&
+                    callTypeNC->IsPointerType() == fargTypeNC->IsPointerType()){
+                    cost[i] += 8 * costScale;
+                    continue;
+                }
+            }
             if (fargType->IsVaryingType() && callType->IsUniformType()) {
                 // Here we deal with brodcasting uniform to varying.
                 // callType - varying and fargType - uniform is forbidden.
@@ -8523,6 +8571,12 @@ FunctionSymbolExpr::ResolveOverloads(SourcePos argPos,
         return true;
     }
     else if (matches.size() > 1) {
+        for (size_t i=0; i<argTypes.size(); i++) {
+            if (argTypes[i]->IsPolymorphicType()) {
+                matchingFunc = matches[0];
+                return true;
+            }
+        }
         // Multiple matches: ambiguous
         std::string candidateMessage =
             lGetOverloadCandidateMessage(matches, argTypes, argCouldBeNULL);

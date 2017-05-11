@@ -90,7 +90,7 @@
 #endif
 #include <llvm/Support/ToolOutputFile.h>
 
-Function::Function(Symbol *s, Stmt *c) {
+Function::Function(Symbol *s, Stmt *c, bool typecheck) {
     sym = s;
     code = c;
 
@@ -98,13 +98,15 @@ Function::Function(Symbol *s, Stmt *c) {
     Assert(maskSymbol != NULL);
 
     if (code != NULL) {
-        code = TypeCheck(code);
+        if (typecheck) {
+            code = TypeCheck(code);
 
-        if (code != NULL && g->debugPrint) {
-            printf("After typechecking function \"%s\":\n",
-                    sym->name.c_str());
-            code->Print(0);
-            printf("---------------------\n");
+            if (code != NULL && g->debugPrint) {
+                printf("After typechecking function \"%s\":\n",
+                        sym->name.c_str());
+                code->Print(0);
+                printf("---------------------\n");
+            }
         }
 
         if (code != NULL) {
@@ -135,6 +137,7 @@ Function::Function(Symbol *s, Stmt *c) {
         args.push_back(sym);
 
         const Type *t = type->GetParameterType(i);
+
         if (sym != NULL && CastType<ReferenceType>(t) == NULL)
             sym->parentFunction = this;
     }
@@ -640,7 +643,6 @@ Function::IsPolyFunction() const {
     return false;
 }
 
-
 std::vector<Function *> *
 Function::ExpandPolyArguments(SymbolTable *symbolTable) const {
     Assert(symbolTable != NULL);
@@ -651,37 +653,64 @@ Function::ExpandPolyArguments(SymbolTable *symbolTable) const {
 
     const FunctionType *func = CastType<FunctionType>(sym->type);
 
-    if (g->debugPrint) {
-        printf("%s before replacing anything:\n", sym->name.c_str());
-        code->Print(0);
-    }
-
     for (size_t i=0; i<versions.size(); i++) {
+        if (g->debugPrint) {
+            printf("%s before replacing anything:\n", sym->name.c_str());
+            code->Print(0);
+        }
         const FunctionType *ft = CastType<FunctionType>(versions[i]->type);
-        Stmt *ncode = code;
+
+        symbolTable->PushScope();
+
+        Symbol *s = symbolTable->LookupFunction(versions[i]->name.c_str(), ft);
+        Stmt *ncode = (Stmt*)CopyAST(code);
+
+        Function *f = new Function(s, ncode, false);
+
+        for (size_t j=0; j<args.size(); j++) {
+            f->args[j] = new Symbol(*args[j]);
+            symbolTable->AddVariable(f->args[j], false);
+        }
 
         for (int j=0; j<ft->GetNumParameters(); j++) {
             if (func->GetParameterType(j)->IsPolymorphicType()) {
                 const PolyType *from = CastType<PolyType>(
                         func->GetParameterType(j)->GetBaseType());
 
-                ncode = (Stmt*)TranslatePoly(ncode, from,
+                f->code = (Stmt*)TranslatePoly(f->code, from,
                         ft->GetParameterType(j)->GetBaseType());
                 if (g->debugPrint) {
                     printf("%s after replacing %s with %s:\n\n",
                             sym->name.c_str(), from->GetString().c_str(),
                             ft->GetParameterType(j)->GetBaseType()->GetString().c_str());
 
-                    ncode->Print(0);
+                    f->code->Print(0);
 
                     printf("------------------------------------------\n\n");
                 }
             }
         }
 
-        Symbol *s = symbolTable->LookupFunction(versions[i]->name.c_str(), ft);
+        // we didn't typecheck before, now we can
+        f->code = TypeCheck(f->code);
 
-        expanded->push_back(new Function(s, ncode));
+        f->code = Optimize(f->code);
+
+        if (g->debugPrint) {
+            printf("After optimizing expanded function \"%s\":\n",
+                    f->sym->name.c_str());
+            f->code->Print(0);
+            printf("---------------------\n");
+        }
+
+
+
+        symbolTable->PopScope();
+
+
+
+
+        expanded->push_back(f);
     }
 
     return expanded;
