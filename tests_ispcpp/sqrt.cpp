@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <pthread.h>
 #include <math.h>
+#include <cmath>
 
 #include "CycleTimer.h"
 #include "sqrt.h"
@@ -45,11 +46,11 @@ void sqrtSerial(int N,
         double x = values[i];
         double guess = initialGuess;
 
-        double error = abs(guess * guess * x - 1.);
+        double error = std::abs(guess * guess * x - 1.);
 
         while (error > kThreshold) {
             guess = (3. * guess - x * guess * guess * guess) * 0.5;
-            error = fabs(guess * guess * x - 1.);
+            error = std::abs(guess * guess * x - 1.);
         }
 
         output[i] = x * guess;
@@ -66,7 +67,7 @@ static void verifyResult(int N, float* result, float* gold) {
 
 static void verifyResult(int N, double* result, double* gold) {
     for (int i=0; i<N; i++) {
-        if (abs(result[i] - gold[i]) > 1e-4) {
+        if (std::abs(result[i] - gold[i]) > 1e-4) {
             printf("Error: [%d] Got %f expected %f\n", i, result[i], gold[i]);
         }
     }
