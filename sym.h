@@ -181,7 +181,8 @@ public:
         in the symbol table.
 
         @return pointer to matching Symbol; NULL if none is found. */
-    Symbol *LookupFunction(const char *name, const FunctionType *type);
+    Symbol *LookupFunction(const char *name, const FunctionType *type,
+                           bool ignorePoly = false);
 
     std::vector<Symbol *>& LookupPolyFunction(const char *name);
 

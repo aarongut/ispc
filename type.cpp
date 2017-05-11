@@ -4078,7 +4078,8 @@ bool
 Type::IsBasicType(const Type *type) {
     return (CastType<AtomicType>(type) != NULL ||
             CastType<EnumType>(type) != NULL ||
-            CastType<PointerType>(type) != NULL);
+            CastType<PointerType>(type) != NULL ||
+            CastType<PolyType>(type) != NULL);
 }
 
 

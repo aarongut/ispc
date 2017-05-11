@@ -561,6 +561,7 @@ lDoTypeConv(const Type *fromType, const Type *toType, Expr **expr,
                       "\"%s\" for %s", fromType->GetString().c_str(),
                       toPolyType->GetString().c_str(), errorMsgBase);
             }
+            return false;
         }
     }
 
@@ -7148,8 +7149,11 @@ TypeCastExpr::GetValue(FunctionEmitContext *ctx) const {
             return NULL;
 
         return ctx->IntToPtrInst(exprVal, llvmToType, "int_to_ptr");
-    }
-    else {
+    } else if (CastType<PolyType>(toType)) {
+        Error(pos, "Unexpected polymorphic type cast to \"%s\"",
+              toType->GetString().c_str());
+        return NULL;
+    } else {
         const AtomicType *toAtomic = CastType<AtomicType>(toType);
         // typechecking should ensure this is the case
         if (!toAtomic) {

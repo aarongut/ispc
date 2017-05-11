@@ -1032,8 +1032,7 @@ Module::AddFunctionDeclaration(const std::string &name,
     }
 
     std::vector<const FunctionType *> nextExpanded;
-    std::set<const Type*>::iterator iter;
-    for (iter = toExpand.begin(); iter != toExpand.end(); iter++) {
+    for (auto iter = toExpand.begin(); iter != toExpand.end(); iter++) {
         for (size_t j=0; j<expanded.size(); j++) {
             const FunctionType *eft = expanded[j];
 
@@ -1060,7 +1059,14 @@ Module::AddFunctionDeclaration(const std::string &name,
                     nargsp.push_back(eft->GetParameterSourcePos(k));
                 }
 
-                nextExpanded.push_back(new FunctionType(eft->GetReturnType(),
+                const Type *ret = eft->GetReturnType();
+                if (Type::EqualForReplacement(ret, pt)) {
+                    printf("Replaced return type %s\n",
+                           ret->GetString().c_str());
+                    ret = PolyType::ReplaceType(ret, *te);
+                }
+
+                nextExpanded.push_back(new FunctionType(ret,
                                                         nargs,
                                                         nargsn,
                                                         nargsd,
@@ -1078,6 +1084,11 @@ Module::AddFunctionDeclaration(const std::string &name,
 
     if (expanded.size() > 1) {
         for (size_t i=0; i<expanded.size(); i++) {
+            if (expanded[i]->GetReturnType()->IsPolymorphicType()) {
+                Error(pos, "Unexpected polymorphic return type \"%s\"",
+                      expanded[i]->GetReturnType()->GetString().c_str());
+                return;
+            }
             std::string nname = name;
             if (functionType->isExported || functionType->isExternC) {
                 for (int j=0; j<expanded[i]->GetNumParameters(); j++) {
