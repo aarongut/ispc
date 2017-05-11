@@ -691,7 +691,7 @@ public:
     Symbol *GetBaseSymbol() const;
     Expr *TypeCheck();
     Expr *Optimize();
-    Expr *ReplacePolyType(const PolyType *from, const Type *to);
+    //Expr *ReplacePolyType(const PolyType *from, const Type *to);
     void Print() const;
     int EstimateCost() const;
 

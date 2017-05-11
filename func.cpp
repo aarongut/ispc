@@ -127,6 +127,7 @@ Function::Function(Symbol *s, Stmt *c) {
     const FunctionType *type = CastType<FunctionType>(sym->type);
     Assert(type != NULL);
 
+    printf("Function %s symbol types: ", sym->name.c_str());
     for (int i = 0; i < type->GetNumParameters(); ++i) {
         const char *paramName = type->GetParameterName(i).c_str();
         Symbol *sym = m->symbolTable->LookupVariable(paramName);
@@ -135,9 +136,14 @@ Function::Function(Symbol *s, Stmt *c) {
         args.push_back(sym);
 
         const Type *t = type->GetParameterType(i);
+        printf(" %s: %s==%s, ", sym->name.c_str(),
+                t->GetString().c_str(),
+                sym->type->GetString().c_str());
+
         if (sym != NULL && CastType<ReferenceType>(t) == NULL)
             sym->parentFunction = this;
     }
+    printf("\n");
 
     if (type->isTask
 #ifdef ISPC_NVPTX_ENABLED

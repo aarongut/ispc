@@ -128,6 +128,9 @@ Expr::ReplacePolyType(const PolyType *polyType, const Type *replacement) {
         case ConstExprID:
             copy = (Expr*)new ConstExpr(*(ConstExpr*)this);
             break;
+        case SymbolExprID:
+            copy = (Expr*)new SymbolExpr(*(SymbolExpr*)this);
+            break;
         case PtrDerefExprID:
             copy = (Expr*)new PtrDerefExpr(*(PtrDerefExpr*)this);
             break;
@@ -8138,6 +8141,7 @@ SymbolExpr::Optimize() {
         return this;
 }
 
+/*
 Expr *
 SymbolExpr::ReplacePolyType(const PolyType *from, const Type *to) {
     if (!symbol)
@@ -8145,7 +8149,7 @@ SymbolExpr::ReplacePolyType(const PolyType *from, const Type *to) {
 
     SymbolExpr *copy = new SymbolExpr(this);
 
-    copy->symbol = new Symbol(*symbol);
+    //copy->symbol = new Symbol(*symbol);
 
     if (Type::EqualForReplacement(symbol->type->GetBaseType(), from)) {
         copy->symbol->type = PolyType::ReplaceType(symbol->type, to);
@@ -8153,6 +8157,7 @@ SymbolExpr::ReplacePolyType(const PolyType *from, const Type *to) {
 
     return copy;
 }
+*/
 
 
 int

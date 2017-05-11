@@ -105,6 +105,9 @@ Stmt::ReplacePolyType(const PolyType *polyType, const Type *replacement) {
         case ExprStmtID:
             copy = (Stmt*)new ExprStmt(*(ExprStmt*)this);
             break;
+        case ForeachStmtID:
+            copy = (Stmt*)new ForeachStmt(*(ForeachStmt*)this);
+            break;
         case ForeachActiveStmtID:
             copy = (Stmt*)new ForeachActiveStmt(*(ForeachActiveStmt*)this);
             break;
@@ -1557,6 +1560,7 @@ ForeachStmt::ForeachStmt(const std::vector<Symbol *> &lvs,
       stmts(s) {
 }
 
+/*
 ForeachStmt::ForeachStmt(ForeachStmt *base)
     : Stmt(base->pos, ForeachStmtID) {
     dimVariables = base->dimVariables;
@@ -1565,6 +1569,7 @@ ForeachStmt::ForeachStmt(ForeachStmt *base)
     isTiled = base->isTiled;
     stmts = base->stmts;
 }
+*/
 
 
 /* Given a uniform counter value in the memory location pointed to by
@@ -1809,8 +1814,10 @@ ForeachStmt::EmitCode(FunctionEmitContext *ctx) const {
         // Start and end value for this loop dimension
         llvm::Value *sv = startExprs[i]->GetValue(ctx);
         llvm::Value *ev = endExprs[i]->GetValue(ctx);
-        if (sv == NULL || ev == NULL)
+        if (sv == NULL || ev == NULL) {
+            fprintf(stderr, "ev is NULL again :(\n");
             return;
+        }
         startVals.push_back(sv);
         endVals.push_back(ev);
 
@@ -2270,6 +2277,7 @@ ForeachStmt::TypeCheck() {
     return anyErrors ? NULL : this;
 }
 
+/*
 Stmt *
 ForeachStmt::ReplacePolyType(const PolyType *from, const Type *to) {
     if (!stmts)
@@ -2280,12 +2288,13 @@ ForeachStmt::ReplacePolyType(const PolyType *from, const Type *to) {
     for (size_t i=0; i<dimVariables.size(); i++) {
         const Type *t = copy->dimVariables[i]->type;
         if (Type::EqualForReplacement(t->GetBaseType(), from)) {
-            t = PolyType::ReplaceType(t, to);
+            copy->dimVariables[i]->type = PolyType::ReplaceType(t, to);
         }
     }
 
     return copy;
 }
+*/
 
 
 int

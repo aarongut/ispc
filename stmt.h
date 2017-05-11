@@ -285,7 +285,7 @@ public:
     void Print(int indent) const;
 
     Stmt *TypeCheck();
-    Stmt *ReplacePolyType(const PolyType *from, const Type *to);
+    //Stmt *ReplacePolyType(const PolyType *from, const Type *to);
     int EstimateCost() const;
 
     std::vector<Symbol *> dimVariables;
@@ -294,7 +294,7 @@ public:
     bool isTiled;
     Stmt *stmts;
 private:
-    ForeachStmt(ForeachStmt *base);
+    //ForeachStmt(ForeachStmt *base);
 };
 
 
