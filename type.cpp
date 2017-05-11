@@ -249,6 +249,15 @@ Type::IsVoidType() const {
 
 bool
 Type::IsPolymorphicType() const {
+    const FunctionType *ft = CastType<FunctionType>(this);
+    if (ft) {
+        for (int i=0; i<ft->GetNumParameters(); i++) {
+            if (ft->GetParameterType(i)->IsPolymorphicType())
+                return true;
+        }
+
+        return false;
+    }
     return (CastType<PolyType>(GetBaseType()) != NULL);
 }
 
@@ -3585,6 +3594,34 @@ FunctionType::GetCDeclaration(const std::string &fname) const {
     return ret;
 }
 
+std::string
+FunctionType::GetCCall(const std::string &fname) const {
+    std::string ret;
+    ret += fname;
+    ret += "(";
+    for (unsigned int i = 0; i < paramTypes.size(); ++i) {
+        const Type *type = paramTypes[i];
+
+        // Convert pointers to arrays to unsized arrays, which are more clear
+        // to print out for multidimensional arrays (i.e. "float foo[][4] "
+        // versus "float (foo *)[4]").
+        const PointerType *pt = CastType<PointerType>(type);
+        if (pt != NULL &&
+            CastType<ArrayType>(pt->GetBaseType()) != NULL) {
+            type = new ArrayType(pt->GetBaseType(), 0);
+        }
+
+        if (paramNames[i] != "")
+          ret += paramNames[i];
+        else
+            FATAL("Exporting a polymorphic function with incomplete arguments");
+        if (i != paramTypes.size() - 1)
+          ret += ", ";
+    }
+    ret += ")";
+    return ret;
+}
+
 
 std::string
 FunctionType::GetCDeclarationForDispatch(const std::string &fname) const {
@@ -4041,7 +4078,8 @@ bool
 Type::IsBasicType(const Type *type) {
     return (CastType<AtomicType>(type) != NULL ||
             CastType<EnumType>(type) != NULL ||
-            CastType<PointerType>(type) != NULL);
+            CastType<PointerType>(type) != NULL ||
+            CastType<PolyType>(type) != NULL);
 }
 
 

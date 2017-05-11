@@ -147,7 +147,7 @@ bool
 SymbolTable::AddFunction(Symbol *symbol) {
     const FunctionType *ft = CastType<FunctionType>(symbol->type);
     Assert(ft != NULL);
-    if (LookupFunction(symbol->name.c_str(), ft) != NULL)
+    if (LookupFunction(symbol->name.c_str(), ft, true) != NULL)
         // A function of the same name and type has already been added to
         // the symbol table
         return false;
@@ -183,7 +183,8 @@ SymbolTable::LookupFunction(const char *name, std::vector<Symbol *> *matches) {
 
 
 Symbol *
-SymbolTable::LookupFunction(const char *name, const FunctionType *type) {
+SymbolTable::LookupFunction(const char *name, const FunctionType *type,
+                            bool ignorePoly) {
     FunctionMapType::iterator iter = functions.find(name);
     if (iter != functions.end()) {
         std::vector<Symbol *> funcs = iter->second;
@@ -193,7 +194,7 @@ SymbolTable::LookupFunction(const char *name, const FunctionType *type) {
         }
     }
     // Try looking for a polymorphic function
-    if (polyFunctions[name].size() > 0) {
+    if (!ignorePoly && polyFunctions[name].size() > 0) {
         std::string n = name;
         return new Symbol(name, polyFunctions[name][0]->pos, type);
     }
@@ -204,6 +205,14 @@ SymbolTable::LookupFunction(const char *name, const FunctionType *type) {
 std::vector<Symbol *>&
 SymbolTable::LookupPolyFunction(const char *name) {
     return polyFunctions[name];
+}
+
+void
+SymbolTable::GetPolyFunctions(std::vector<std::string> *funcs) {
+    FunctionMapType::iterator it = polyFunctions.begin();
+    for (; it != polyFunctions.end(); it++) {
+        funcs->push_back(it->first);
+    }
 }
 
 

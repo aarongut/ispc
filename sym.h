@@ -181,9 +181,12 @@ public:
         in the symbol table.
 
         @return pointer to matching Symbol; NULL if none is found. */
-    Symbol *LookupFunction(const char *name, const FunctionType *type);
+    Symbol *LookupFunction(const char *name, const FunctionType *type,
+                           bool ignorePoly = false);
 
     std::vector<Symbol *>& LookupPolyFunction(const char *name);
+
+    void GetPolyFunctions(std::vector<std::string> *funcs);
 
     /** Returns all of the functions in the symbol table that match the given
         predicate.

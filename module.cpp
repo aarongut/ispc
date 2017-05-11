@@ -1032,8 +1032,7 @@ Module::AddFunctionDeclaration(const std::string &name,
     }
 
     std::vector<const FunctionType *> nextExpanded;
-    std::set<const Type*>::iterator iter;
-    for (iter = toExpand.begin(); iter != toExpand.end(); iter++) {
+    for (auto iter = toExpand.begin(); iter != toExpand.end(); iter++) {
         for (size_t j=0; j<expanded.size(); j++) {
             const FunctionType *eft = expanded[j];
 
@@ -1060,7 +1059,14 @@ Module::AddFunctionDeclaration(const std::string &name,
                     nargsp.push_back(eft->GetParameterSourcePos(k));
                 }
 
-                nextExpanded.push_back(new FunctionType(eft->GetReturnType(),
+                const Type *ret = eft->GetReturnType();
+                if (Type::EqualForReplacement(ret, pt)) {
+                    printf("Replaced return type %s\n",
+                           ret->GetString().c_str());
+                    ret = PolyType::ReplaceType(ret, *te);
+                }
+
+                nextExpanded.push_back(new FunctionType(ret,
                                                         nargs,
                                                         nargsn,
                                                         nargsd,
@@ -1078,6 +1084,11 @@ Module::AddFunctionDeclaration(const std::string &name,
 
     if (expanded.size() > 1) {
         for (size_t i=0; i<expanded.size(); i++) {
+            if (expanded[i]->GetReturnType()->IsPolymorphicType()) {
+                Error(pos, "Unexpected polymorphic return type \"%s\"",
+                      expanded[i]->GetReturnType()->GetString().c_str());
+                return;
+            }
             std::string nname = name;
             if (functionType->isExported || functionType->isExternC) {
                 for (int j=0; j<expanded[i]->GetNumParameters(); j++) {
@@ -1977,6 +1988,27 @@ lPrintFunctionDeclarations(FILE *file, const std::vector<Symbol *> &funcs,
     // fprintf(file, "#ifdef __cplusplus\n} /* end extern C */\n#endif // __cplusplus\n");
 }
 
+static void
+lPrintPolyFunctionWrappers(FILE *file, const std::vector<std::string> &funcs) {
+    fprintf(file, "#if defined(__cplusplus)\n");
+
+    for (size_t i=0; i<funcs.size(); i++) {
+        std::vector<Symbol *> poly = m->symbolTable->LookupPolyFunction(funcs[i].c_str());
+
+        for (size_t j=0; j<poly.size(); j++) {
+            const FunctionType *ftype = CastType<FunctionType>(poly[j]->type);
+            Assert(ftype);
+            std::string decl = ftype->GetCDeclaration(funcs[i]);
+            fprintf(file, "    %s {\n", decl.c_str());
+
+            std::string call = ftype->GetCCall(poly[j]->name);
+            fprintf(file, "        return %s;\n    }\n", call.c_str());
+        }
+    }
+
+    fprintf(file, "#endif // __cplusplus\n");
+}
+
 
 
 
@@ -2353,8 +2385,10 @@ Module::writeHeader(const char *fn) {
     // Collect single linear arrays of the exported and extern "C"
     // functions
     std::vector<Symbol *> exportedFuncs, externCFuncs;
+    std::vector<std::string> polyFuncs;
     m->symbolTable->GetMatchingFunctions(lIsExported, &exportedFuncs);
     m->symbolTable->GetMatchingFunctions(lIsExternC, &externCFuncs);
+    m->symbolTable->GetPolyFunctions(&polyFuncs);
 
     // Get all of the struct, vector, and enumerant types used as function
     // parameters.  These vectors may have repeats.
@@ -2391,6 +2425,16 @@ Module::writeHeader(const char *fn) {
         fprintf(f, "///////////////////////////////////////////////////////////////////////////\n");
         lPrintFunctionDeclarations(f, exportedFuncs);
     }
+
+    // emit wrappers for polymorphic functions
+    if (polyFuncs.size() > 0) {
+        fprintf(f, "\n");
+        fprintf(f, "///////////////////////////////////////////////////////////////////////////\n");
+        fprintf(f, "// Polymorphic function wrappers\n");
+        fprintf(f, "///////////////////////////////////////////////////////////////////////////\n");
+        lPrintPolyFunctionWrappers(f, polyFuncs);
+    }
+
 #if 0
     if (externCFuncs.size() > 0) {
         fprintf(f, "\n");

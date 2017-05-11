@@ -651,8 +651,10 @@ Function::ExpandPolyArguments(SymbolTable *symbolTable) const {
 
     const FunctionType *func = CastType<FunctionType>(sym->type);
 
-    printf("%s before replacing anything:\n", sym->name.c_str());
-    code->Print(0);
+    if (g->debugPrint) {
+        printf("%s before replacing anything:\n", sym->name.c_str());
+        code->Print(0);
+    }
 
     for (size_t i=0; i<versions.size(); i++) {
         const FunctionType *ft = CastType<FunctionType>(versions[i]->type);
@@ -665,13 +667,15 @@ Function::ExpandPolyArguments(SymbolTable *symbolTable) const {
 
                 ncode = (Stmt*)TranslatePoly(ncode, from,
                         ft->GetParameterType(j)->GetBaseType());
-                printf("%s after replacing %s with %s:\n\n",
-                        sym->name.c_str(), from->GetString().c_str(),
-                        ft->GetParameterType(j)->GetBaseType()->GetString().c_str());
+                if (g->debugPrint) {
+                    printf("%s after replacing %s with %s:\n\n",
+                            sym->name.c_str(), from->GetString().c_str(),
+                            ft->GetParameterType(j)->GetBaseType()->GetString().c_str());
 
-                ncode->Print(0);
+                    ncode->Print(0);
 
-                printf("------------------------------------------\n\n");
+                    printf("------------------------------------------\n\n");
+                }
             }
         }
 

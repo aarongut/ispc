@@ -13,6 +13,7 @@ tests*/*cpp
 tests*/*run
 tests*/*.o
 tests_ispcpp/*.h
+tests_ispcpp/*.out
 tests_ispcpp/*pre*
 logs/
 notify_log.log

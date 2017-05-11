@@ -1927,6 +1927,11 @@ FunctionEmitContext::BinaryOperator(llvm::Instruction::BinaryOps inst,
         return NULL;
     }
 
+    if (v0->getType() != v1->getType()) {
+        v0->dump();
+        printf("\n\n");
+        v1->dump();
+    }
     AssertPos(currentPos, v0->getType() == v1->getType());
     llvm::Type *type = v0->getType();
     int arraySize = lArrayVectorWidth(type);
