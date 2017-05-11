@@ -70,6 +70,7 @@ public:
     // Stmts don't have anything to do here.
     virtual Stmt *Optimize();
     virtual Stmt *TypeCheck() = 0;
+    Stmt *Copy();
     Stmt *ReplacePolyType(const PolyType *polyType, const Type *replacement);
 };
 
@@ -122,8 +123,6 @@ public:
     int EstimateCost() const;
 
     std::vector<VariableDeclaration> vars;
-private:
-    DeclStmt(DeclStmt *base);
 };
 
 
@@ -285,7 +284,6 @@ public:
     void Print(int indent) const;
 
     Stmt *TypeCheck();
-    //Stmt *ReplacePolyType(const PolyType *from, const Type *to);
     int EstimateCost() const;
 
     std::vector<Symbol *> dimVariables;
@@ -293,8 +291,6 @@ public:
     std::vector<Expr *> endExprs;
     bool isTiled;
     Stmt *stmts;
-private:
-    //ForeachStmt(ForeachStmt *base);
 };
 
 

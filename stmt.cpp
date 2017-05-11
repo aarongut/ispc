@@ -35,6 +35,7 @@
     @brief File with definitions classes related to statements in the language
 */
 
+#include "ast.h"
 #include "stmt.h"
 #include "ctx.h"
 #include "util.h"
@@ -78,7 +79,7 @@ Stmt::Optimize() {
 }
 
 Stmt *
-Stmt::ReplacePolyType(const PolyType *polyType, const Type *replacement) {
+Stmt::Copy() {
     Stmt *copy;
     switch (getValueID()) {
         case AssertStmtID:
@@ -93,6 +94,9 @@ Stmt::ReplacePolyType(const PolyType *polyType, const Type *replacement) {
         case ContinueStmtID:
             copy = (Stmt*)new ContinueStmt(*(ContinueStmt*)this);
             break;
+        case DeclStmtID:
+            copy = (Stmt*)new DeclStmt(*(DeclStmt*)this);
+            break;
         case DefaultStmtID:
             copy = (Stmt*)new DefaultStmt(*(DefaultStmt*)this);
             break;
@@ -105,11 +109,11 @@ Stmt::ReplacePolyType(const PolyType *polyType, const Type *replacement) {
         case ExprStmtID:
             copy = (Stmt*)new ExprStmt(*(ExprStmt*)this);
             break;
-        case ForeachStmtID:
-            copy = (Stmt*)new ForeachStmt(*(ForeachStmt*)this);
-            break;
         case ForeachActiveStmtID:
             copy = (Stmt*)new ForeachActiveStmt(*(ForeachActiveStmt*)this);
+            break;
+        case ForeachStmtID:
+            copy = (Stmt*)new ForeachStmt(*(ForeachStmt*)this);
             break;
         case ForeachUniqueStmtID:
             copy = (Stmt*)new ForeachUniqueStmt(*(ForeachUniqueStmt*)this);
@@ -142,10 +146,15 @@ Stmt::ReplacePolyType(const PolyType *polyType, const Type *replacement) {
             copy = (Stmt*)new UnmaskedStmt(*(UnmaskedStmt*)this);
             break;
         default:
-            FATAL("Unmatched case in ReplacePolyType (stmt)");
+            FATAL("Unmatched case in Stmt::Copy");
             copy = this; // just to silence the compiler
     }
     return copy;
+}
+
+Stmt *
+Stmt::ReplacePolyType(const PolyType *, const Type *) {
+    return this;
 }
 
 
@@ -198,11 +207,6 @@ ExprStmt::EstimateCost() const {
 
 DeclStmt::DeclStmt(const std::vector<VariableDeclaration> &v, SourcePos p)
     : Stmt(p, DeclStmtID), vars(v) {
-}
-
-DeclStmt::DeclStmt(DeclStmt *base)
-    : Stmt(base->pos, DeclStmtID) {
-    vars = base->vars;
 }
 
 
@@ -572,16 +576,14 @@ DeclStmt::TypeCheck() {
 
 Stmt *
 DeclStmt::ReplacePolyType(const PolyType *from, const Type *to) {
-    DeclStmt *copy = new DeclStmt(this);
-
     for (size_t i = 0; i < vars.size(); i++) {
-        Symbol *s = copy->vars[i].sym;
+        Symbol *s = vars[i].sym;
         if (Type::EqualForReplacement(s->type->GetBaseType(), from)) {
             s->type = PolyType::ReplaceType(s->type, to);
         }
     }
 
-    return copy;
+    return this;
 }
 
 
@@ -2276,25 +2278,6 @@ ForeachStmt::TypeCheck() {
 
     return anyErrors ? NULL : this;
 }
-
-/*
-Stmt *
-ForeachStmt::ReplacePolyType(const PolyType *from, const Type *to) {
-    if (!stmts)
-        return NULL;
-
-    ForeachStmt *copy = new ForeachStmt(this);
-
-    for (size_t i=0; i<dimVariables.size(); i++) {
-        const Type *t = copy->dimVariables[i]->type;
-        if (Type::EqualForReplacement(t->GetBaseType(), from)) {
-            copy->dimVariables[i]->type = PolyType::ReplaceType(t, to);
-        }
-    }
-
-    return copy;
-}
-*/
 
 
 int

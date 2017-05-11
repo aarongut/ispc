@@ -127,7 +127,6 @@ Function::Function(Symbol *s, Stmt *c) {
     const FunctionType *type = CastType<FunctionType>(sym->type);
     Assert(type != NULL);
 
-    printf("Function %s symbol types: ", sym->name.c_str());
     for (int i = 0; i < type->GetNumParameters(); ++i) {
         const char *paramName = type->GetParameterName(i).c_str();
         Symbol *sym = m->symbolTable->LookupVariable(paramName);
@@ -136,14 +135,10 @@ Function::Function(Symbol *s, Stmt *c) {
         args.push_back(sym);
 
         const Type *t = type->GetParameterType(i);
-        printf(" %s: %s==%s, ", sym->name.c_str(),
-                t->GetString().c_str(),
-                sym->type->GetString().c_str());
 
         if (sym != NULL && CastType<ReferenceType>(t) == NULL)
             sym->parentFunction = this;
     }
-    printf("\n");
 
     if (type->isTask
 #ifdef ISPC_NVPTX_ENABLED
@@ -657,14 +652,14 @@ Function::ExpandPolyArguments(SymbolTable *symbolTable) const {
 
     const FunctionType *func = CastType<FunctionType>(sym->type);
 
-    if (g->debugPrint) {
-        printf("%s before replacing anything:\n", sym->name.c_str());
-        code->Print(0);
-    }
-
     for (size_t i=0; i<versions.size(); i++) {
+        if (g->debugPrint) {
+            printf("%s before replacing anything:\n", sym->name.c_str());
+            code->Print(0);
+        }
         const FunctionType *ft = CastType<FunctionType>(versions[i]->type);
-        Stmt *ncode = code;
+
+        Stmt *ncode = (Stmt*)CopyAST(code);
 
         for (int j=0; j<ft->GetNumParameters(); j++) {
             if (func->GetParameterType(j)->IsPolymorphicType()) {
