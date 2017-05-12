@@ -1,9 +1,8 @@
-floating saxpy_helper(floating scale,
-                      floating$3 x,
-                      floating$3 y) {
-    return scale * x + y;
-}
+//@error
 
+floating$0 mult(floating$0 x, floating$1 y) {
+    return x * y;
+}
 
 export void saxpy(uniform int N,
                   uniform floating$0 scale,
@@ -12,6 +11,7 @@ export void saxpy(uniform int N,
                   uniform floating$2 result[])
 {
     foreach (i = 0 ... N) {
-        result[i] = saxpy_helper(scale, X[i], Y[i]);
+        floating$ tmp = mult(scale, X[i]) + Y[i];
+        result[i] = tmp;
     }
 }
