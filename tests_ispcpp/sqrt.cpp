@@ -180,25 +180,25 @@ int main() {
         minTaskISPC = std::min(minTaskISPC, endTime - startTime);
     }
 
-    printf("[sqrt float task ispc]:\t[%.3f] ms\n", minTaskISPC * 1000);
+    printf("[sqrt float task ispc]:\t\t[%.3f] ms\n", minTaskISPC * 1000);
 
     verifyResult(N, output, gold);
 
     double minDTaskISPC = 1e30;
     for (int i = 0; i < 3; ++i) {
         double startTime = CycleTimer::currentSeconds();
-        ispc::sqrt_ispc_withtasks(N, initialGuess, values, output);
+        ispc::sqrt_ispc_withtasks(N, dinitialGuess, dvalues, doutput);
         double endTime = CycleTimer::currentSeconds();
         minDTaskISPC = std::min(minDTaskISPC, endTime - startTime);
     }
 
-    printf("[sqrt double task ispc]:\t[%.3f] ms\n", minTaskISPC * 1000);
+    printf("[sqrt double task ispc]:\t[%.3f] ms\n", minDTaskISPC * 1000);
 
     verifyResult(N, output, gold);
 
     printf("\t\t\t\t(%.2fx speedup from ISPC float)\n", minSerial/minISPC);
-    printf("\t\t\t\t(%.2fx speedup from task ISPC float)\n", minSerial/minTaskISPC);
     printf("\t\t\t\t(%.2fx speedup from ISPC double)\n", minDSerial/minDISPC);
+    printf("\t\t\t\t(%.2fx speedup from task ISPC float)\n", minSerial/minTaskISPC);
     printf("\t\t\t\t(%.2fx speedup from task ISPC double)\n", minDSerial/minDTaskISPC);
 
     delete[] values;

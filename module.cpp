@@ -1061,8 +1061,6 @@ Module::AddFunctionDeclaration(const std::string &name,
 
                 const Type *ret = eft->GetReturnType();
                 if (Type::EqualForReplacement(ret, pt)) {
-                    printf("Replaced return type %s\n",
-                           ret->GetString().c_str());
                     ret = PolyType::ReplaceType(ret, *te);
                 }
 
@@ -1998,11 +1996,13 @@ lPrintPolyFunctionWrappers(FILE *file, const std::vector<std::string> &funcs) {
         for (size_t j=0; j<poly.size(); j++) {
             const FunctionType *ftype = CastType<FunctionType>(poly[j]->type);
             Assert(ftype);
-            std::string decl = ftype->GetCDeclaration(funcs[i]);
-            fprintf(file, "    %s {\n", decl.c_str());
+            if (ftype->isExported || ftype->isExternC) {
+                std::string decl = ftype->GetCDeclaration(funcs[i]);
+                fprintf(file, "    %s {\n", decl.c_str());
 
-            std::string call = ftype->GetCCall(poly[j]->name);
-            fprintf(file, "        return %s;\n    }\n", call.c_str());
+                std::string call = ftype->GetCCall(poly[j]->name);
+                fprintf(file, "        return %s;\n    }\n", call.c_str());
+            }
         }
     }
 

@@ -6,7 +6,7 @@
 int main() {
     float A[256];
     double B[256];
-    double outA[256];
+    float outA[256];
     double outB[256];
 
 
@@ -15,7 +15,7 @@ int main() {
         B[i] = 1. / (i+1);
     }
 
-    ispc::square(256, (float*)&A, (double*)&outA);
+    ispc::square(256, (float*)&A, (float*)&outA);
 
     ispc::square(256, (double*)&B, (double*)&outB);
 
