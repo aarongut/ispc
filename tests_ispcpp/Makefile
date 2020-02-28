@@ -2,7 +2,7 @@ CXX=g++
 CXXFLAGS=-std=c++11 -O3 -lm -lpthread
 
 ISPC=../ispc
-ISPCFLAGS=--target=sse4-x2 -O3 --arch=x86-64
+ISPCFLAGS=--target=avx2 -O3 --arch=x86-64
 
 %.out : %.cpp %.o tasksys.o
 	$(CXX) $(CXXFLAGS) -o $@ $^
